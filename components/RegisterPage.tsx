@@ -1,13 +1,13 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { Building2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { Button } from './ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from './ui/card';
-import Link from 'next/link';
 
 export function RegisterPage() {
   const router = useRouter();
@@ -52,7 +52,7 @@ export function RegisterPage() {
         {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-8">
           <Building2 className="h-10 w-10 text-primary" />
-          <span className="text-2xl font-semibold">PropertyOS</span>
+          <span className="text-2xl font-semibold">Esnaad</span>
         </div>
 
         {/* Registration Card */}

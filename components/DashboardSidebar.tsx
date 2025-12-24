@@ -33,7 +33,7 @@ export function DashboardSidebar() {
       <div className="p-6 border-b border-sidebar-border">
         <Link href="/" className="flex items-center gap-2">
           <Building2 className="h-8 w-8" />
-          <span className="font-semibold">PropertyOS</span>
+          <span className="font-semibold">Esnaad</span>
         </Link>
       </div>
 
