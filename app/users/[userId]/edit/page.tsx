@@ -2,13 +2,23 @@
 
 import { OwnerEditPage, OwnerFormData, OwnedUnit } from "@/components/OwnerEditPage";
 import { useRouter } from "next/navigation";
-import { use, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchUserById, updateUser } from "@/lib/api/users.service";
+import { UserDetails } from "@/lib/types/api.types";
+import { toast } from "sonner";
+import { useUnits } from "@/lib/hooks/use-units";
 
 export default function EditOwner({ params }: { params: Promise<{ userId: string }> }) {
   const router = useRouter();
   const { userId } = use(params);
   const { userRole } = useAuth();
+  const [user, setUser] = useState<UserDetails | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch units owned by this user
+  const { units: userUnits = [] } = useUnits({ ownerId: userId });
 
   // Redirect non-admin users to users page
   useEffect(() => {
@@ -17,44 +27,85 @@ export default function EditOwner({ params }: { params: Promise<{ userId: string
     }
   }, [userRole, router]);
 
-  // Mock initial data - in real app, fetch from API based on userId
-  const initialData: OwnerFormData = {
-    id: userId,
-    firstName: 'Ahmed',
-    familyName: 'Al-Rashid',
-    email: 'ahmed.rashid@email.com',
-    iqamaNumber: '2345678903',
-    phoneNumber: '+966 50 123 4567',
-    status: 'Active',
-    createdAt: 'Dec 15, 2024',
-    lastUpdated: 'Dec 20, 2024',
+  // Fetch user data
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        setIsLoading(true);
+        const userData = await fetchUserById(userId);
+        setUser(userData);
+      } catch (error: any) {
+        console.error('Failed to fetch user:', error);
+        toast.error('Failed to load user details');
+        router.push('/users');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadUser();
+  }, [userId, router]);
+
+  // Convert UserDetails to OwnerFormData format
+  const getInitialData = (): OwnerFormData | undefined => {
+    if (!user) return undefined;
+
+    const nameParts = (user.name || '').split(' ');
+    const firstName = nameParts[0] || '';
+    const familyName = nameParts.slice(1).join(' ') || '';
+
+    return {
+      id: user.id,
+      firstName,
+      familyName,
+      email: user.email,
+      nationalityId: user.externalClient?.nationalityId || '',
+      phoneNumber: user.externalClient?.phoneNumber || '',
+      status: user.isActive ? 'Active' : 'Suspended',
+      createdAt: user.createdAt || undefined,
+      lastUpdated: user.updatedAt || undefined,
+    };
   };
 
-  // Mock owned units - in real app, fetch from API
-  const ownedUnits: OwnedUnit[] = [
-    { id: '1', unitCode: 'A-101', type: 'Studio', building: 'Riverside Apartments', status: 'Occupied' },
-    { id: '2', unitCode: 'B-205', type: '2 Bedroom', building: 'Garden Tower', status: 'Vacant' },
-    { id: '3', unitCode: 'C-312', type: '1 Bedroom', building: 'Skyline Plaza', status: 'Occupied' },
-  ];
+  // Convert units to OwnedUnit format
+  const getOwnedUnits = (): OwnedUnit[] => {
+    return userUnits.map(unit => ({
+      id: unit.id,
+      unitCode: unit.unitNumber, // Map unitNumber to unitCode
+      type: unit.unitType || 'Unknown',
+      building: unit.buildingName || unit.project?.name || '',
+      status: unit.ownerId ? 'Occupied' : 'Vacant' as 'Occupied' | 'Vacant' | 'Maintenance',
+    }));
+  };
 
   const handleBack = () => {
     router.push('/users');
   };
 
-  const handleSave = (data: OwnerFormData) => {
-    console.log('Saving owner data:', data);
+  const handleSave = async (data: OwnerFormData) => {
+    try {
+      setIsSaving(true);
 
-    // In a real app, this would make an API call
-    // Example:
-    // const response = await fetch(`/api/owners/${userId}`, {
-    //   method: 'PUT',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(data),
-    // });
+      // Prepare update data
+      const updateData = {
+        name: `${data.firstName} ${data.familyName}`.trim(),
+        isActive: data.status === 'Active',
+      };
 
-    // For demo purposes, show success message and redirect
-    alert(`Owner updated successfully!\n\nName: ${data.firstName} ${data.familyName}\nEmail: ${data.email}\nStatus: ${data.status}`);
-    router.push(`/users/${userId}`);
+      // Update user via API
+      const updatedUser = await updateUser(userId, updateData);
+
+      // Note: External client data (nationality ID, phone) would need separate API endpoint
+      // For now, we're only updating what the current API supports
+
+      toast.success('User updated successfully!');
+      router.push(`/users/${userId}`);
+    } catch (error: any) {
+      console.error('Failed to update user:', error);
+      toast.error(error.message || 'Failed to update user');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -63,12 +114,23 @@ export default function EditOwner({ params }: { params: Promise<{ userId: string
     }
   };
 
-  const handleDeactivate = () => {
-    console.log('Deactivating owner:', userId);
+  const handleDeactivate = async () => {
+    if (!user) return;
 
-    // In a real app, this would make an API call
-    alert(`Owner account has been deactivated.\n\nThe owner will no longer have access to the system.`);
-    router.push('/users');
+    try {
+      setIsSaving(true);
+
+      // Update user status to inactive
+      await updateUser(userId, { isActive: false });
+
+      toast.success('User account has been deactivated');
+      router.push('/users');
+    } catch (error: any) {
+      console.error('Failed to deactivate user:', error);
+      toast.error(error.message || 'Failed to deactivate user');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Only render for admin users
@@ -76,14 +138,31 @@ export default function EditOwner({ params }: { params: Promise<{ userId: string
     return null;
   }
 
+  // Show loading state
+  if (isLoading || !user) {
+    return (
+      <div className="max-w-[1440px] mx-auto p-8">
+        <div className="animate-pulse">
+          <div className="h-8 w-32 bg-gray-200 rounded mb-6"></div>
+          <div className="h-12 w-64 bg-gray-200 rounded mb-8"></div>
+          <div className="space-y-4">
+            <div className="h-40 bg-gray-200 rounded"></div>
+            <div className="h-40 bg-gray-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <OwnerEditPage
-      initialData={initialData}
-      ownedUnits={ownedUnits}
+      initialData={getInitialData()}
+      ownedUnits={getOwnedUnits()}
       onBack={handleBack}
       onSave={handleSave}
       onCancel={handleCancel}
       onDeactivate={handleDeactivate}
+      isSaving={isSaving}
     />
   );
 }

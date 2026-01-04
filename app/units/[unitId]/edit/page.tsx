@@ -26,7 +26,6 @@ export default function UnitEdit({ params }: { params: Promise<{ unitId: string 
     address: '123 River Street, Downtown District\nRiyadh 12345, Saudi Arabia',
     floor: '1st Floor',
     size: '120.5',
-    ownershipStatus: 'Owned',
     ownerId: '1',
     ownerName: 'Ahmed Al-Rashid',
     bedrooms: '2',
@@ -52,7 +51,7 @@ export default function UnitEdit({ params }: { params: Promise<{ unitId: string 
     // });
 
     // For demo purposes, show success message and redirect
-    alert(`Unit updated successfully!\n\nUnit Code: ${data.unitCode}\nType: ${data.unitType}\nOwnership: ${data.ownershipStatus}${data.ownerName ? `\nOwner: ${data.ownerName}` : ''}`);
+    alert(`Unit updated successfully!\n\nUnit Code: ${data.unitCode}\nType: ${data.unitType}${data.ownerName ? `\nOwner: ${data.ownerName}` : ''}`);
     router.push(`/units/${unitId}`);
   };
 

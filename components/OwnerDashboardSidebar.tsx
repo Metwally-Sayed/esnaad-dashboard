@@ -1,8 +1,9 @@
 'use client';
 
-import { Building2, LayoutDashboard, Home, FileText, Settings, LogOut } from 'lucide-react';
+import { Building2, LayoutDashboard, Home, FileText, Settings, LogOut, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Button } from './ui/button';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -16,7 +17,8 @@ export function OwnerDashboardSidebar() {
   const navItems: NavItem[] = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
     { icon: Home, label: 'My Units', href: '/units' },
-    { icon: FileText, label: 'Documents', href: '/documents' },
+    { icon: FileText, label: 'Handovers', href: '/handovers' },
+    { icon: AlertTriangle, label: 'Snagging', href: '/snaggings' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];
 
@@ -72,12 +74,12 @@ export function OwnerDashboardSidebar() {
             <p className="text-muted-foreground text-sm truncate">Owner</p>
           </div>
         </div>
-        <button
+        <Button
           className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
         >
           <LogOut className="h-5 w-5" />
           <span>Logout</span>
-        </button>
+        </Button>
       </div>
     </div>
   );

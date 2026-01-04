@@ -5,7 +5,7 @@ import { OwnerDashboardPage } from "@/components/OwnerDashboardPage";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function Home() {
-  const { userRole } = useAuth();
+  const { isAdmin } = useAuth();
 
-  return userRole === 'admin' ? <DashboardPage /> : <OwnerDashboardPage />;
+  return isAdmin ? <DashboardPage /> : <OwnerDashboardPage />;
 }

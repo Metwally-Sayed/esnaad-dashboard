@@ -27,7 +27,7 @@ export function UnitProfilePage({ onBack, onEdit }: UnitProfilePageProps) {
   const owner = {
     name: 'John Smith',
     email: 'john.smith@email.com',
-    iqamaNumber: '2345678901',
+    nationalityId: '2345678901',
   };
 
   const isOwned = unit.status === 'Owned';
@@ -159,8 +159,8 @@ export function UnitProfilePage({ onBack, onEdit }: UnitProfilePageProps) {
                   </div>
                   <Separator />
                   <div>
-                    <label className="text-muted-foreground text-sm">Iqama Number</label>
-                    <p className="mt-1">{owner.iqamaNumber}</p>
+                    <label className="text-muted-foreground text-sm">Nationality ID</label>
+                    <p className="mt-1">{owner.nationalityId}</p>
                   </div>
                 </div>
               </CardContent>

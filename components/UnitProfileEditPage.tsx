@@ -29,7 +29,7 @@ export function UnitProfileEditPage({ onBack, onSave, onCancel }: UnitProfileEdi
     size: '450 sq ft',
     ownerName: 'John Smith',
     ownerEmail: 'john.smith@email.com',
-    ownerIqama: '2345678901',
+    ownerNationalityId: '2345678901',
   });
 
   const handleInputChange = (field: string, value: string) => {
@@ -264,13 +264,13 @@ export function UnitProfileEditPage({ onBack, onSave, onCancel }: UnitProfileEdi
                   </div>
                   <Separator />
                   <div>
-                    <Label htmlFor="ownerIqama">Iqama Number</Label>
+                    <Label htmlFor="ownerNationalityId">Nationality ID</Label>
                     <Input
-                      id="ownerIqama"
-                      value={formData.ownerIqama}
-                      onChange={(e) => handleInputChange('ownerIqama', e.target.value)}
+                      id="ownerNationalityId"
+                      value={formData.ownerNationalityId}
+                      onChange={(e) => handleInputChange('ownerNationalityId', e.target.value)}
                       className="mt-1.5"
-                      placeholder="Enter Iqama number"
+                      placeholder="Enter Nationality ID"
                     />
                   </div>
                 </div>

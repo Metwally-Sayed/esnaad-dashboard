@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Save, X, UserCog, Trash2, Lock, ChevronLeft } from 'lucide-react';
+import { Save, X, UserCog, Trash2, Lock, ChevronLeft, Loader2 } from 'lucide-react';
 import { OwnerForm, OwnerFormData, OwnedUnit } from './OwnerForm';
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ interface OwnerEditPageProps {
   onDeactivate?: () => void;
   initialData?: OwnerFormData;
   ownedUnits?: OwnedUnit[];
+  isSaving?: boolean;
 }
 
 export function OwnerEditPage({
@@ -34,7 +35,8 @@ export function OwnerEditPage({
   onCancel,
   onDeactivate,
   initialData,
-  ownedUnits = []
+  ownedUnits = [],
+  isSaving = false
 }: OwnerEditPageProps) {
   const formDataRef = useRef<OwnerFormData | null>(initialData || null);
   const validateRef = useRef<(() => boolean) | null>(null);
@@ -113,13 +115,22 @@ export function OwnerEditPage({
 
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleCancel}>
+          <Button variant="outline" onClick={handleCancel} disabled={isSaving}>
             <X className="h-4 w-4 mr-2" />
             Cancel
           </Button>
-          <Button onClick={handleSave}>
-            <Save className="h-4 w-4 mr-2" />
-            Save Changes
+          <Button onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Save Changes
+              </>
+            )}
           </Button>
         </div>
       </div>
@@ -162,9 +173,18 @@ export function OwnerEditPage({
               {/* Deactivate Account Button */}
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="destructive" className="w-full">
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Deactivate Account
+                  <Button variant="destructive" className="w-full" disabled={isSaving}>
+                    {isSaving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Deactivate Account
+                      </>
+                    )}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -178,12 +198,13 @@ export function OwnerEditPage({
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel disabled={isSaving}>Cancel</AlertDialogCancel>
                     <AlertDialogAction
                       onClick={handleDeactivate}
+                      disabled={isSaving}
                       className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                     >
-                      Deactivate Account
+                      {isSaving ? 'Deactivating...' : 'Deactivate Account'}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

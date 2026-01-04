@@ -1,22 +1,10 @@
-'use client';
+'use client'
 
-import { UnitProfilePage } from "@/components/UnitProfilePage";
-import { useRouter } from "next/navigation";
-import { use } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { UnitDetailsPage } from "@/components/UnitDetailsPage"
+import { use } from "react"
 
-export default function UnitProfile({ params }: { params: Promise<{ unitId: string }> }) {
-  const router = useRouter();
-  const { unitId } = use(params);
-  const { userRole } = useAuth();
+export default function UnitDetails({ params }: { params: Promise<{ unitId: string }> }) {
+  const { unitId } = use(params)
 
-  const handleBack = () => {
-    router.push('/units');
-  };
-
-  const handleEdit = () => {
-    router.push(`/units/${unitId}/edit`);
-  };
-
-  return <UnitProfilePage onBack={handleBack} onEdit={userRole === 'admin' ? handleEdit : undefined} />;
+  return <UnitDetailsPage unitId={unitId} />
 }

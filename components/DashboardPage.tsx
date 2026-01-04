@@ -6,20 +6,20 @@ import { Button } from './ui/button';
 
 export function DashboardPage() {
   return (
-    <div className="max-w-[1440px] mx-auto p-8">
-      {/* Page Header */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
+      {/* Page Header - Responsive */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6 md:mb-8">
         <div>
-          <h1>Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+          <p className="text-sm md:text-base text-muted-foreground mt-1">
             Welcome back! Here's what's happening with your properties.
           </p>
         </div>
-        <Button>Add Property</Button>
+        <Button className="w-full sm:w-auto">Add Property</Button>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      {/* Stats Grid - Responsive */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6 mb-6 md:mb-8">
         <StatsCard
           title="Total Properties"
           value="24"
@@ -50,21 +50,21 @@ export function DashboardPage() {
         />
       </div>
 
-      {/* Properties Section */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2>Properties Overview</h2>
-          <Button variant="outline">View All</Button>
+      {/* Properties Section - Responsive */}
+      <div className="mb-6 md:mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+          <h2 className="text-xl md:text-2xl font-semibold">Properties Overview</h2>
+          <Button variant="outline" className="w-full sm:w-auto">View All</Button>
         </div>
         <PropertiesTable />
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-3 gap-6">
-        <div className="col-span-2">
+      {/* Recent Activity - Responsive Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-5 lg:gap-6">
+        <div className="lg:col-span-2">
           {/* Placeholder for future charts or content */}
-          <div className="rounded-lg border border-border bg-card p-6 h-[400px] flex items-center justify-center">
-            <p className="text-muted-foreground">Analytics Chart Placeholder</p>
+          <div className="rounded-lg border border-border bg-card p-4 md:p-6 h-[300px] md:h-[350px] lg:h-[400px] flex items-center justify-center">
+            <p className="text-sm md:text-base text-muted-foreground">Analytics Chart Placeholder</p>
           </div>
         </div>
         <div>

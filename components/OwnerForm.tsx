@@ -22,7 +22,7 @@ export interface OwnerFormData {
   firstName: string;
   familyName: string;
   email: string;
-  iqamaNumber: string;
+  nationalityId: string;
   phoneNumber: string;
   status: 'Active' | 'Pending' | 'Suspended';
   createdAt?: string;
@@ -48,7 +48,7 @@ const defaultFormData: OwnerFormData = {
   firstName: '',
   familyName: '',
   email: '',
-  iqamaNumber: '',
+  nationalityId: '',
   phoneNumber: '',
   status: 'Pending',
 };
@@ -112,11 +112,11 @@ export function OwnerForm({ mode, initialData, ownedUnits = [], onDataChange }: 
       newErrors.email = 'Please enter a valid email address';
     }
 
-    // Iqama Number validation
-    if (!data.iqamaNumber.trim()) {
-      newErrors.iqamaNumber = 'Iqama number is required';
-    } else if (!/^\d{10}$/.test(data.iqamaNumber)) {
-      newErrors.iqamaNumber = 'Iqama number must be exactly 10 digits';
+    // Nationality ID validation
+    if (!data.nationalityId.trim()) {
+      newErrors.nationalityId = 'Nationality ID is required';
+    } else if (!/^\d{10}$/.test(data.nationalityId)) {
+      newErrors.nationalityId = 'Nationality ID must be exactly 10 digits';
     }
 
     // Phone Number validation (optional but must be valid if provided)
@@ -134,7 +134,7 @@ export function OwnerForm({ mode, initialData, ownedUnits = [], onDataChange }: 
       firstName: true,
       familyName: true,
       email: true,
-      iqamaNumber: true,
+      nationalityId: true,
       phoneNumber: true,
     });
     return validateFormData(formData);
@@ -247,24 +247,24 @@ export function OwnerForm({ mode, initialData, ownedUnits = [], onDataChange }: 
 
                 <Separator />
 
-                {/* Iqama Number */}
+                {/* Nationality ID */}
                 <div>
-                  <Label htmlFor="iqamaNumber">
-                    Iqama Number <span className="text-destructive">*</span>
+                  <Label htmlFor="nationalityId">
+                    Nationality ID <span className="text-destructive">*</span>
                   </Label>
                   <Input
-                    id="iqamaNumber"
-                    value={formData.iqamaNumber}
-                    onChange={(e) => handleInputChange('iqamaNumber', e.target.value)}
-                    onBlur={() => handleBlur('iqamaNumber')}
-                    className={`mt-1.5 ${errors.iqamaNumber && touched.iqamaNumber ? 'border-destructive' : ''}`}
-                    placeholder="Enter 10-digit Iqama number"
+                    id="nationalityId"
+                    value={formData.nationalityId}
+                    onChange={(e) => handleInputChange('nationalityId', e.target.value)}
+                    onBlur={() => handleBlur('nationalityId')}
+                    className={`mt-1.5 ${errors.nationalityId && touched.nationalityId ? 'border-destructive' : ''}`}
+                    placeholder="Enter 10-digit Nationality ID"
                     maxLength={10}
                   />
-                  {errors.iqamaNumber && touched.iqamaNumber && (
-                    <p className="text-sm text-destructive mt-1">{errors.iqamaNumber}</p>
+                  {errors.nationalityId && touched.nationalityId && (
+                    <p className="text-sm text-destructive mt-1">{errors.nationalityId}</p>
                   )}
-                  {!errors.iqamaNumber && isCreateMode && (
+                  {!errors.nationalityId && isCreateMode && (
                     <p className="text-sm text-muted-foreground mt-1">
                       Must be exactly 10 digits
                     </p>
@@ -400,7 +400,7 @@ export function OwnerForm({ mode, initialData, ownedUnits = [], onDataChange }: 
                 <ul className="space-y-2 text-sm text-blue-800">
                   <li>• Fields marked with <span className="text-destructive">*</span> are required</li>
                   <li>• Email must exist in the clients database</li>
-                  <li>• Iqama number must be unique in the system</li>
+                  <li>• Nationality ID must be unique in the system</li>
                   <li>• Phone number is optional but recommended</li>
                   <li>• New owners are created with "Pending" status by default</li>
                 </ul>
@@ -534,9 +534,9 @@ export function OwnerForm({ mode, initialData, ownedUnits = [], onDataChange }: 
                   </div>
                   <Separator />
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Iqama:</span>
+                    <span className="text-sm text-muted-foreground">Nationality ID:</span>
                     <span className="text-sm font-medium">
-                      {formData.iqamaNumber || '—'}
+                      {formData.nationalityId || '—'}
                     </span>
                   </div>
                   <Separator />

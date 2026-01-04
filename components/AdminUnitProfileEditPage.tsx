@@ -19,11 +19,11 @@ interface AdminUnitProfileEditPageProps {
 
 // Mock owners data - in real app this would come from API
 const mockOwners = [
-  { id: '1', name: 'John Smith', email: 'john.smith@email.com', iqama: '2345678901' },
-  { id: '2', name: 'Sarah Johnson', email: 'sarah.j@email.com', iqama: '2345678902' },
-  { id: '3', name: 'Ahmed Al-Rashid', email: 'ahmed.rashid@email.com', iqama: '2345678903' },
-  { id: '4', name: 'Maria Garcia', email: 'maria.g@email.com', iqama: '2345678904' },
-  { id: '5', name: 'David Chen', email: 'david.chen@email.com', iqama: '2345678905' },
+  { id: '1', name: 'John Smith', email: 'john.smith@email.com', nationalityId: '2345678901' },
+  { id: '2', name: 'Sarah Johnson', email: 'sarah.j@email.com', nationalityId: '2345678902' },
+  { id: '3', name: 'Ahmed Al-Rashid', email: 'ahmed.rashid@email.com', nationalityId: '2345678903' },
+  { id: '4', name: 'Maria Garcia', email: 'maria.g@email.com', nationalityId: '2345678904' },
+  { id: '5', name: 'David Chen', email: 'david.chen@email.com', nationalityId: '2345678905' },
 ];
 
 export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnitProfileEditPageProps) {
@@ -44,7 +44,7 @@ export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnit
     // For new owner
     newOwnerName: '',
     newOwnerEmail: '',
-    newOwnerIqama: '',
+    newOwnerNationalityId: '',
     newOwnerPhone: '',
     notes: '',
   });
@@ -88,8 +88,8 @@ export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnit
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.newOwnerEmail)) {
           newErrors.newOwnerEmail = 'Valid email is required';
         }
-        if (!formData.newOwnerIqama.trim()) {
-          newErrors.newOwnerIqama = 'Iqama number is required';
+        if (!formData.newOwnerNationalityId.trim()) {
+          newErrors.newOwnerNationalityId = 'Nationality ID is required';
         }
       }
     }
@@ -119,7 +119,7 @@ export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnit
   const filteredOwners = mockOwners.filter(owner =>
     owner.name.toLowerCase().includes(ownerSearch.toLowerCase()) ||
     owner.email.toLowerCase().includes(ownerSearch.toLowerCase()) ||
-    owner.iqama.includes(ownerSearch)
+    owner.nationalityId.includes(ownerSearch)
   );
 
   return (
@@ -407,7 +407,7 @@ export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnit
                         <Input
                           id="ownerSearch"
                           type="text"
-                          placeholder="Search by name, email, or Iqama..."
+                          placeholder="Search by name, email, or Nationality ID..."
                           value={ownerSearch}
                           onChange={(e) => setOwnerSearch(e.target.value)}
                           className="mt-1.5"
@@ -451,8 +451,8 @@ export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnit
                             <span className="ml-2">{selectedOwner.email}</span>
                           </div>
                           <div className="text-sm">
-                            <span className="text-muted-foreground">Iqama:</span>
-                            <span className="ml-2">{selectedOwner.iqama}</span>
+                            <span className="text-muted-foreground">Nationality ID:</span>
+                            <span className="ml-2">{selectedOwner.nationalityId}</span>
                           </div>
                         </div>
                       )}
@@ -490,16 +490,16 @@ export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnit
                         )}
                       </div>
                       <div>
-                        <Label htmlFor="newOwnerIqama">Iqama Number *</Label>
+                        <Label htmlFor="newOwnerNationalityId">Nationality ID *</Label>
                         <Input
-                          id="newOwnerIqama"
-                          value={formData.newOwnerIqama}
-                          onChange={(e) => handleInputChange('newOwnerIqama', e.target.value)}
-                          className={`mt-1.5 ${errors.newOwnerIqama ? 'border-destructive' : ''}`}
-                          placeholder="Enter Iqama number"
+                          id="newOwnerNationalityId"
+                          value={formData.newOwnerNationalityId}
+                          onChange={(e) => handleInputChange('newOwnerNationalityId', e.target.value)}
+                          className={`mt-1.5 ${errors.newOwnerNationalityId ? 'border-destructive' : ''}`}
+                          placeholder="Enter Nationality ID"
                         />
-                        {errors.newOwnerIqama && (
-                          <p className="text-sm text-destructive mt-1">{errors.newOwnerIqama}</p>
+                        {errors.newOwnerNationalityId && (
+                          <p className="text-sm text-destructive mt-1">{errors.newOwnerNationalityId}</p>
                         )}
                       </div>
                       <div>

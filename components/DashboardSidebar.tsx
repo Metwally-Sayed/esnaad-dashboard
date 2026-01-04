@@ -1,8 +1,9 @@
 'use client';
 
-import { Building2, LayoutDashboard, Home, Users, Settings, FileText, BarChart3 } from 'lucide-react';
+import { Building2, LayoutDashboard, Home, Users, Settings, FileText, BarChart3, Briefcase, AlertTriangle, Activity, X } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { Button } from './ui/button';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -15,8 +16,12 @@ export function DashboardSidebar() {
 
   const navItems: NavItem[] = [
     { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
+    { icon: Briefcase, label: 'Projects', href: '/projects' },
     { icon: Home, label: 'Units', href: '/units' },
+    { icon: FileText, label: 'Handovers', href: '/handovers' },
+    { icon: AlertTriangle, label: 'Snagging', href: '/snaggings' },
     { icon: Users, label: 'Users', href: '/users' },
+    { icon: Activity, label: 'Audit Logs', href: '/audit-logs' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];
 
@@ -28,12 +33,12 @@ export function DashboardSidebar() {
   };
 
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border h-screen flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-sidebar-border">
+    <div className="w-64 md:w-72 lg:w-64 bg-sidebar border-r border-sidebar-border h-screen flex flex-col">
+      {/* Logo - Responsive padding */}
+      <div className="p-4 md:p-5 lg:p-6 border-b border-sidebar-border">
         <Link href="/" className="flex items-center gap-2">
-          <Building2 className="h-8 w-8" />
-          <span className="font-semibold">Esnaad</span>
+          <Building2 className="h-7 w-7 md:h-8 md:w-8" />
+          <span className="font-semibold text-base md:text-lg">Esnaad</span>
         </Link>
       </div>
 

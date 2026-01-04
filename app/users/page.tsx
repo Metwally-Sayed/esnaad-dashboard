@@ -16,22 +16,10 @@ export default function Users() {
     }
   }, [userRole, router]);
 
-  const handleViewUser = (userId: string) => {
-    router.push(`/users/${userId}`);
-  };
-
-  const handleEditUser = (userId: string) => {
-    router.push(`/users/${userId}/edit`);
-  };
-
-  const handleAddUser = () => {
-    router.push('/users/create');
-  };
-
   // Only render users page for admins
   if (userRole !== 'admin') {
     return null;
   }
 
-  return <UsersPage onViewUser={handleViewUser} onEditUser={handleEditUser} onAddUser={handleAddUser} />;
+  return <UsersPage />;
 }

@@ -47,7 +47,7 @@ export function UnitEditPage({ onBack, onSave, onCancel, initialData }: UnitEdit
     }
   };
 
-  const currentStatus = formDataRef.current?.ownershipStatus || initialData?.ownershipStatus || 'Not Owned';
+  const currentStatus = (formDataRef.current?.ownerId || initialData?.ownerId) ? 'Owned' : 'Not Owned';
 
   return (
     <div className="max-w-[1440px] mx-auto p-8">
