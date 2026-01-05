@@ -19,14 +19,25 @@ export function DashboardHeader() {
   const { user, logout, isAdmin } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  // Get user display name (prefer name, fallback to email username)
+  const getDisplayName = () => {
+    if (user?.name) return user.name;
+    if (user?.email) {
+      // Extract username from email (part before @)
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
   // Get user initials for avatar
   const getInitials = (name: string | null | undefined) => {
-    if (!name) return 'U';
-    const parts = name.split(' ');
+    const displayName = name || getDisplayName();
+    if (!displayName || displayName === 'User') return 'U';
+    const parts = displayName.split(' ');
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     }
-    return name.substring(0, 2).toUpperCase();
+    return displayName.substring(0, 2).toUpperCase();
   };
 
   const handleLogout = async () => {

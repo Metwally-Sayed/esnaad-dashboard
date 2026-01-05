@@ -1,9 +1,8 @@
 'use client';
 
-import { Building2, LayoutDashboard, Home, FileText, Settings, LogOut, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Building2, FileText, FolderOpen, Home, LayoutDashboard, Settings } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from './ui/button';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -19,6 +18,7 @@ export function OwnerDashboardSidebar() {
     { icon: Home, label: 'My Units', href: '/units' },
     { icon: FileText, label: 'Handovers', href: '/handovers' },
     { icon: AlertTriangle, label: 'Snagging', href: '/snaggings' },
+    { icon: FolderOpen, label: 'Documents', href: '/documents' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];
 
@@ -62,25 +62,6 @@ export function OwnerDashboardSidebar() {
           })}
         </ul>
       </nav>
-
-      {/* User section */}
-      <div className="p-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 px-3 py-2 mb-2">
-          <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
-            JS
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="truncate font-medium">John Smith</p>
-            <p className="text-muted-foreground text-sm truncate">Owner</p>
-          </div>
-        </div>
-        <Button
-          className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent/50 transition-colors"
-        >
-          <LogOut className="h-5 w-5" />
-          <span>Logout</span>
-        </Button>
-      </div>
     </div>
   );
 }

@@ -31,6 +31,7 @@ import { SnaggingList } from './snagging/SnaggingList'
 import { AuditLogsTable } from './AuditLogsTable'
 import { useUnitAuditLogs } from '@/lib/hooks/use-audit-logs'
 import { UnitHandoversList } from './handover/UnitHandoversList'
+import { UnitDocumentsSection } from './documents/UnitDocumentsSection'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -346,6 +347,12 @@ export function UnitDetailsPage({ unitId }: UnitDetailsPageProps) {
         unitId={unitId}
         unitNumber={unit.unitNumber}
         ownerId={unit.ownerId}
+      />
+
+      {/* Documents Section */}
+      <UnitDocumentsSection
+        unitId={unitId}
+        unitNumber={unit.unitNumber}
       />
 
       {/* Audit Logs Section - Only visible to admins */}

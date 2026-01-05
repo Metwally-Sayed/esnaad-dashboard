@@ -1,3 +1,11 @@
+'use client';
+
+import { useProjects } from '@/lib/hooks/use-projects';
+import { useUnits } from '@/lib/hooks/use-units';
+import { Loader2, MapPin, MoreHorizontal } from 'lucide-react';
+import { useMemo } from 'react';
+import { Badge } from './ui/badge';
+import { Button } from './ui/button';
 import {
   Table,
   TableBody,
@@ -6,81 +14,67 @@ import {
   TableHeader,
   TableRow,
 } from './ui/table';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { MoreHorizontal, MapPin } from 'lucide-react';
-
-interface Property {
-  id: string;
-  name: string;
-  location: string;
-  units: number;
-  occupied: number;
-  revenue: string;
-  status: 'Active' | 'Maintenance' | 'Inactive';
-}
-
-const properties: Property[] = [
-  {
-    id: '1',
-    name: 'Riverside Apartments',
-    location: 'Seattle, WA',
-    units: 48,
-    occupied: 45,
-    revenue: '$94,500',
-    status: 'Active',
-  },
-  {
-    id: '2',
-    name: 'Downtown Plaza',
-    location: 'Portland, OR',
-    units: 32,
-    occupied: 28,
-    revenue: '$67,200',
-    status: 'Active',
-  },
-  {
-    id: '3',
-    name: 'Sunset Heights',
-    location: 'San Francisco, CA',
-    units: 64,
-    occupied: 58,
-    revenue: '$156,800',
-    status: 'Active',
-  },
-  {
-    id: '4',
-    name: 'Oak Street Residences',
-    location: 'Austin, TX',
-    units: 24,
-    occupied: 24,
-    revenue: '$48,000',
-    status: 'Active',
-  },
-  {
-    id: '5',
-    name: 'Harbor View Complex',
-    location: 'Boston, MA',
-    units: 56,
-    occupied: 52,
-    revenue: '$124,800',
-    status: 'Maintenance',
-  },
-];
 
 export function PropertiesTable() {
-  const getStatusVariant = (status: Property['status']) => {
+  const { projects, isLoading: isLoadingProjects } = useProjects();
+  const { units, isLoading: isLoadingUnits } = useUnits();
+
+  // Transform projects data with unit counts
+  const displayProjects = useMemo(() => {
+    if (!projects || !units) return [];
+
+    return projects.slice(0, 5).map(project => {
+      // Count units for this project
+      const projectUnits = units.filter(unit => unit.projectId === project.id);
+      const totalUnits = projectUnits.length;
+      const occupiedUnits = projectUnits.filter(unit => unit.ownerId).length;
+
+      return {
+        id: project.id,
+        name: project.name,
+        location: project.location || 'N/A',
+        units: totalUnits,
+        occupied: occupiedUnits,
+        status: project.status,
+      };
+    });
+  }, [projects, units]);
+
+  const getStatusVariant = (status: string) => {
     switch (status) {
-      case 'Active':
+      case 'active':
         return 'default';
-      case 'Maintenance':
+      case 'on-hold':
         return 'secondary';
-      case 'Inactive':
+      case 'completed':
         return 'outline';
       default:
         return 'default';
     }
   };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'Active';
+      case 'on-hold':
+        return 'On Hold';
+      case 'completed':
+        return 'Completed';
+      default:
+        return status;
+    }
+  };
+
+  if (isLoadingProjects || isLoadingUnits) {
+    return (
+      <div className="rounded-lg border border-border bg-card p-8">
+        <div className="flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-lg border border-border bg-card">
@@ -90,44 +84,44 @@ export function PropertiesTable() {
             <TableHead>Property Name</TableHead>
             <TableHead>Location</TableHead>
             <TableHead>Units</TableHead>
-            <TableHead>Occupancy</TableHead>
-            <TableHead>Monthly Revenue</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {properties.map((property) => (
-            <TableRow key={property.id}>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
-                    <MapPin className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <span>{property.name}</span>
-                </div>
-              </TableCell>
-              <TableCell className="text-muted-foreground">{property.location}</TableCell>
-              <TableCell>{property.units}</TableCell>
-              <TableCell>
-                <div className="flex items-center gap-2">
-                  <span>{property.occupied}/{property.units}</span>
-                  <span className="text-muted-foreground text-sm">
-                    ({Math.round((property.occupied / property.units) * 100)}%)
-                  </span>
-                </div>
-              </TableCell>
-              <TableCell>{property.revenue}</TableCell>
-              <TableCell>
-                <Badge variant={getStatusVariant(property.status)}>{property.status}</Badge>
-              </TableCell>
-              <TableCell>
-                <Button variant="ghost" size="icon">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
+          {displayProjects.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                No projects found
               </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            displayProjects.map((project) => (
+              <TableRow key={project.id}>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                      <MapPin className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <span>{project.name}</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-muted-foreground">{project.location}</TableCell>
+                <TableCell>{project.units}</TableCell>
+               
+                <TableCell>
+                  <Badge variant={getStatusVariant(project.status)}>
+                    {getStatusLabel(project.status)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Button variant="ghost" size="icon">
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </div>

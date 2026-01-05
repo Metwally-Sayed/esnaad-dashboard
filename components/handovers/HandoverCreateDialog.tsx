@@ -24,15 +24,18 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useCreateHandover } from '@/lib/hooks/use-handovers'
-import { CreateHandoverDto } from '@/lib/types/handover.types'
+import { CreateHandoverDto, HandoverItemStatus } from '@/lib/types/handover.types'
 import { Loader2, FileText, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUnits } from '@/lib/hooks/use-units'
 import { DatePicker } from '@/components/ui/date-picker'
+import { HandoverItemsBuilder, HandoverItemData } from '@/components/handover/HandoverItemsBuilder'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 // Create schema factory to handle conditional unitId validation
 const createHandoverSchema = (hasUnitId: boolean) => z.object({
@@ -41,10 +44,6 @@ const createHandoverSchema = (hasUnitId: boolean) => z.object({
     message: "Handover date is required",
   }),
   notes: z.string().optional(),
-  checklist: z.array(z.object({
-    item: z.string(),
-    checked: z.boolean(),
-  })).optional(),
 })
 
 type CreateHandoverFormData = z.infer<ReturnType<typeof createHandoverSchema>>
@@ -81,6 +80,8 @@ export function HandoverCreateDialog({
   const router = useRouter()
   const { userRole, userId } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [items, setItems] = useState<HandoverItemData[]>([])
+  const [itemsValid, setItemsValid] = useState(true)
   const createHandover = useCreateHandover()
 
   // Fetch units for selection when no unitId provided
@@ -94,7 +95,6 @@ export function HandoverCreateDialog({
       unitId: unitId || '',
       handoverDate: undefined,
       notes: '',
-      checklist: DEFAULT_CHECKLIST,
     },
   })
 
@@ -105,13 +105,19 @@ export function HandoverCreateDialog({
         unitId: unitId || '',
         handoverDate: undefined,
         notes: '',
-        checklist: DEFAULT_CHECKLIST,
       })
+      setItems([])
     }
   }, [open, unitId, form])
 
   const onSubmit = async (data: CreateHandoverFormData) => {
     try {
+      // Validate items before submission
+      if (items.length > 0 && !itemsValid) {
+        toast.error('Please fix validation errors in checklist items')
+        return
+      }
+
       setIsSubmitting(true)
 
       // Determine final unitId - use prop unitId if provided, otherwise use form value
@@ -136,12 +142,20 @@ export function HandoverCreateDialog({
         finalOwnerId = selectedUnit.ownerId
       }
 
-      // Create handover
+      // Create handover with items
       const createData: CreateHandoverDto = {
         unitId: finalUnitId,
         ownerId: finalOwnerId,
         scheduledAt: data.handoverDate.toISOString(),
         notes: data.notes,
+        items: items.length > 0 ? items.map(({ category, label, expectedValue, notes, sortOrder }) => ({
+          category,
+          label,
+          expectedValue,
+          notes,
+          status: HandoverItemStatus.NA,
+          sortOrder
+        })) : undefined
       }
 
       const result = await createHandover.mutateAsync(createData)
@@ -169,19 +183,33 @@ export function HandoverCreateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Handover Agreement</DialogTitle>
           <DialogDescription>
             {unitId
-              ? `Create a new handover agreement for Unit ${unitNumber || unitId}. Set the handover date and add any relevant notes.`
-              : 'Create a new handover agreement. Select the unit, set the date, and add relevant details.'
+              ? `Create a new handover agreement for Unit ${unitNumber || unitId}.`
+              : 'Create a new handover agreement. Fill in the details and add checklist items.'
             }
           </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <Tabs defaultValue="basic" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="checklist">
+                  Checklist Items
+                  {items.length > 0 && (
+                    <Badge variant="secondary" className="ml-2">
+                      {items.length}
+                    </Badge>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="basic" className="space-y-6 mt-6">
             {/* Unit Selection/Display */}
             {unitId ? (
               // Show read-only unit info when unitId is provided (from unit profile)
@@ -283,26 +311,19 @@ export function HandoverCreateDialog({
               )}
             />
 
-            {/* Checklist Preview */}
-            <div className="space-y-2">
-              <FormLabel>Default Checklist</FormLabel>
-              <div className="rounded-lg border p-4 space-y-2 bg-muted/50">
-                <p className="text-sm text-muted-foreground mb-3">
-                  The following items will be included in the handover checklist:
-                </p>
-                <ul className="text-sm space-y-1">
-                  {DEFAULT_CHECKLIST.map((item, index) => (
-                    <li key={index} className="flex items-center gap-2">
-                      <span className="text-muted-foreground">•</span>
-                      {item.item}
-                    </li>
-                  ))}
-                </ul>
-                <p className="text-xs text-muted-foreground mt-3">
-                  You can modify this checklist after creating the handover.
-                </p>
-              </div>
-            </div>
+              </TabsContent>
+
+              <TabsContent value="checklist" className="mt-6">
+                <HandoverItemsBuilder
+                  items={items}
+                  onChange={setItems}
+                  disabled={isSubmitting}
+                  onValidationChange={(isValid, errors) => {
+                    setItemsValid(isValid)
+                  }}
+                />
+              </TabsContent>
+            </Tabs>
 
             <DialogFooter>
               <Button
@@ -313,7 +334,10 @@ export function HandoverCreateDialog({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || (items.length > 0 && !itemsValid)}
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -323,6 +347,11 @@ export function HandoverCreateDialog({
                   <>
                     <FileText className="h-4 w-4 mr-2" />
                     Create Handover
+                    {items.length > 0 && !itemsValid && (
+                      <Badge variant="destructive" className="ml-2">
+                        Errors
+                      </Badge>
+                    )}
                   </>
                 )}
               </Button>

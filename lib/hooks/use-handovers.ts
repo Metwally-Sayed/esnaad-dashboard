@@ -35,7 +35,11 @@ const handoverFetcher = async ([key, filters]: [string, HandoverFilters]) => {
 }
 
 const handoverDetailFetcher = async ([key, id]: [string, string]) => {
-  return handoverService.getById(id)
+  const result = await handoverService.getById(id)
+  console.log('Handover detail fetched:', result)
+  console.log('Items in handover:', result.items)
+  console.log('Items count:', result.items?.length || 0)
+  return result
 }
 
 const unitHandoverFetcher = async ([key, unitId, filters]: [

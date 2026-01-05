@@ -1,75 +1,109 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUnits } from '@/lib/hooks/use-units';
+import { ArrowRight, Building2, DollarSign, FileText, Home, Loader2, MapPin, TrendingUp } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Building2, Home, DollarSign, TrendingUp, ArrowRight, MapPin, FileText } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-
-// Mock data - in real app this would come from API
-const mockOwnerData = {
-  name: 'John Smith',
-  totalUnits: 3,
-  totalValue: '1,350,000',
-  averageValue: '450,000',
-  portfolioGrowth: '+12.5%',
-};
-
-const mockUnits = [
-  {
-    id: '1',
-    unitCode: 'A-101',
-    building: 'Riverside Apartments',
-    type: 'Studio',
-    size: '450 sq ft',
-    location: 'Riyadh, King Fahd Road',
-    status: 'Owned',
-    value: '450,000',
-    purchaseDate: 'Jan 20, 2024',
-    image: '/placeholder-unit.jpg',
-  },
-  {
-    id: '2',
-    unitCode: 'B-205',
-    building: 'Riverside Apartments',
-    type: '2 Bedroom',
-    size: '850 sq ft',
-    location: 'Riyadh, King Fahd Road',
-    status: 'Owned',
-    value: '650,000',
-    purchaseDate: 'Mar 15, 2024',
-    image: '/placeholder-unit.jpg',
-  },
-  {
-    id: '3',
-    unitCode: 'C-302',
-    building: 'Tower Heights',
-    type: '1 Bedroom',
-    size: '600 sq ft',
-    location: 'Riyadh, Olaya District',
-    status: 'Owned',
-    value: '250,000',
-    purchaseDate: 'May 10, 2024',
-    image: '/placeholder-unit.jpg',
-  },
-];
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 
 export function OwnerDashboardPage() {
   const router = useRouter();
+  const { user, userId } = useAuth();
+
+  // Fetch owner's units
+  const { units, isLoading } = useUnits({ ownerId: userId! });
+
+  // Get user display name (prefer name, fallback to email username)
+  const getDisplayName = () => {
+    if (user?.name) return user.name;
+    if (user?.email) {
+      // Extract username from email (part before @)
+      return user.email.split('@')[0];
+    }
+    return 'User';
+  };
+
+  // Calculate statistics from real data
+  const stats = useMemo(() => {
+    if (!units) {
+      return {
+        totalUnits: 0,
+        totalValue: '0',
+        averageValue: '0',
+        portfolioGrowth: '+0%',
+      };
+    }
+
+    const totalUnits = units.length;
+    // Since we don't have value field in units, we'll use area as a placeholder
+    // In a real app, you'd have a value/price field
+    const totalValue = 0; // Would calculate from unit.value if available
+    const averageValue = totalUnits > 0 ? Math.round(totalValue / totalUnits) : 0;
+
+    return {
+      totalUnits,
+      totalValue: totalValue.toLocaleString(),
+      averageValue: averageValue.toLocaleString(),
+      portfolioGrowth: '+0%', // Would come from backend analytics
+    };
+  }, [units]);
+
+  // Transform units for display
+  const displayUnits = useMemo(() => {
+    if (!units) return [];
+
+    return units.slice(0, 3).map(unit => ({
+      id: unit.id,
+      unitCode: unit.unitNumber,
+      building: unit.buildingName || 'N/A',
+      type: unit.unitType || `${unit.bedrooms || 0} Bedroom`,
+      size: unit.area ? `${unit.area} sq m` : 'N/A',
+      location: unit.address || 'N/A',
+      status: 'Owned',
+      value: '0', // Would use unit.value if available
+      purchaseDate: new Date(unit.createdAt).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+      }),
+      image: unit.imageUrls && unit.imageUrls.length > 0 ? unit.imageUrls[0] : null,
+    }));
+  }, [units]);
 
   const handleViewUnit = (unitId: string) => {
-    router.push(`/owner/units/${unitId}`);
+    router.push(`/units/${unitId}`);
   };
 
   const handleViewAllUnits = () => {
-    router.push('/owner/units');
+    router.push('/units');
   };
+
+  const handleViewDocuments = () => {
+    router.push('/documents');
+  };
+
+  const handleViewPortfolio = () => {
+    router.push('/units');
+  };
+
+  if (isLoading) {
+    return (
+      <div className="max-w-[1440px] mx-auto p-8">
+        <div className="flex items-center justify-center h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1440px] mx-auto p-8">
       {/* Welcome Header */}
       <div className="mb-8">
-        <h1>Welcome back, {mockOwnerData.name}!</h1>
+        <h1>Welcome back, {getDisplayName()}!</h1>
         <p className="text-muted-foreground mt-1">
           Here's an overview of your property portfolio
         </p>
@@ -88,7 +122,7 @@ export function OwnerDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockOwnerData.totalUnits}</div>
+            <div className="text-2xl font-bold">{stats.totalUnits}</div>
             <p className="text-xs text-muted-foreground mt-1">
               Units owned
             </p>
@@ -106,7 +140,7 @@ export function OwnerDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockOwnerData.totalValue} SAR</div>
+            <div className="text-2xl font-bold">{stats.totalValue} SAR</div>
             <p className="text-xs text-muted-foreground mt-1">
               Portfolio value
             </p>
@@ -124,7 +158,7 @@ export function OwnerDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockOwnerData.averageValue} SAR</div>
+            <div className="text-2xl font-bold">{stats.averageValue} SAR</div>
             <p className="text-xs text-muted-foreground mt-1">
               Per unit
             </p>
@@ -142,7 +176,7 @@ export function OwnerDashboardPage() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{mockOwnerData.portfolioGrowth}</div>
+            <div className="text-2xl font-bold text-green-600">{stats.portfolioGrowth}</div>
             <p className="text-xs text-muted-foreground mt-1">
               This year
             </p>
@@ -168,15 +202,23 @@ export function OwnerDashboardPage() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 gap-6">
-            {mockUnits.map((unit) => (
+            {displayUnits.map((unit) => (
               <Card
                 key={unit.id}
                 className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                 onClick={() => handleViewUnit(unit.id)}
               >
-                {/* Unit Image Placeholder */}
-                <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                  <Building2 className="h-16 w-16 text-blue-400" />
+                {/* Unit Image */}
+                <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center overflow-hidden">
+                  {unit.image ? (
+                    <img
+                      src={unit.image}
+                      alt={unit.unitCode}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Building2 className="h-16 w-16 text-blue-400" />
+                  )}
                 </div>
 
                 <CardContent className="pt-4">
@@ -205,8 +247,8 @@ export function OwnerDashboardPage() {
 
                   <div className="pt-3 border-t border-border">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground">Value</span>
-                      <span className="font-semibold">{unit.value} SAR</span>
+                      <span className="text-sm text-muted-foreground">Added</span>
+                      <span className="font-semibold text-sm">{unit.purchaseDate}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -214,7 +256,7 @@ export function OwnerDashboardPage() {
             ))}
           </div>
 
-          {mockUnits.length === 0 && (
+          {displayUnits.length === 0 && (
             <div className="text-center py-12">
               <Building2 className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
               <p className="text-muted-foreground">You don't own any units yet</p>
@@ -225,7 +267,10 @@ export function OwnerDashboardPage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-3 gap-6 mt-8">
-        <Card className="bg-blue-50 border-blue-200 hover:shadow-md transition-shadow cursor-pointer">
+        <Card
+          className="bg-blue-50 border-blue-200 hover:shadow-md transition-shadow cursor-pointer"
+          onClick={handleViewDocuments}
+        >
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-blue-100 rounded-lg">
@@ -241,7 +286,10 @@ export function OwnerDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-green-50 border-green-200 hover:shadow-md transition-shadow cursor-pointer">
+        <Card
+          className="bg-green-50 border-green-200 hover:shadow-md transition-shadow cursor-pointer"
+          onClick={handleViewPortfolio}
+        >
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-green-100 rounded-lg">
@@ -257,7 +305,10 @@ export function OwnerDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-purple-50 border-purple-200 hover:shadow-md transition-shadow cursor-pointer">
+        <Card
+          className="bg-purple-50 border-purple-200 hover:shadow-md transition-shadow cursor-pointer"
+          onClick={handleViewAllUnits}
+        >
           <CardContent className="pt-6">
             <div className="flex items-start gap-4">
               <div className="p-3 bg-purple-100 rounded-lg">

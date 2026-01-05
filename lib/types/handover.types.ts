@@ -61,6 +61,38 @@ export interface HandoverMessage {
   updatedAt: string
 }
 
+// Document Interface
+export interface Document {
+  id: string
+  module: 'HANDOVER' | 'UNIT_PROFILE' | 'SNAGGING' | 'PROJECT'
+  entityId: string
+  type: 'PDF' | 'DOCX' | 'XLSX'
+  templateKey: string
+  version: number
+
+  // File details
+  url: string
+  key: string
+  sha256Hash: string
+  sizeBytes: number
+
+  // Metadata
+  title?: string
+  description?: string
+  metadata?: any
+
+  // Relations
+  createdByUserId: string
+  createdBy?: {
+    id: string
+    name?: string
+    email: string
+  }
+  handover?: Partial<Handover>
+
+  createdAt: string
+}
+
 // Main Handover Interface
 export interface Handover {
   id: string
@@ -97,12 +129,23 @@ export interface Handover {
   items?: HandoverItem[]
   attachments?: HandoverAttachment[]
   messages?: HandoverMessage[]
+  documents?: Document[]
   documentUrl?: string
   documentId?: string
+
+  // Counts
+  _count?: {
+    messages: number
+    documents: number
+  }
+
   createdAt: string
   updatedAt: string
   completedAt?: string
   cancelledAt?: string
+  ownerConfirmedAt?: string
+  adminConfirmedAt?: string
+  version?: number
 }
 
 // Create/Update DTOs
@@ -132,6 +175,12 @@ export interface SendToOwnerDto {
 
 export interface OwnerConfirmDto {
   acknowledgement?: string
+  itemUpdates?: Array<{
+    id: string
+    status: HandoverItemStatus
+    actualValue?: string
+    notes?: string
+  }>
 }
 
 export interface RequestChangesDto {

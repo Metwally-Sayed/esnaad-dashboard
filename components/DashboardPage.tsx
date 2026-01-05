@@ -1,10 +1,64 @@
+'use client';
+
 import { StatsCard } from './StatsCard';
 import { PropertiesTable } from './PropertiesTable';
 import { RecentActivityCard } from './RecentActivityCard';
-import { Building2, Home, Users, DollarSign } from 'lucide-react';
+import { Building2, Home, Users, DollarSign, Loader2 } from 'lucide-react';
 import { Button } from './ui/button';
+import { useProjects } from '@/lib/hooks/use-projects';
+import { useUnits } from '@/lib/hooks/use-units';
+import { useUsers } from '@/lib/hooks/use-users';
+import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 
 export function DashboardPage() {
+  // Fetch data from backend
+  const router = useRouter();
+  const { projects, isLoading: isLoadingProjects } = useProjects();
+  const { units, isLoading: isLoadingUnits } = useUnits();
+  const { users, isLoading: isLoadingUsers } = useUsers({ role: 'OWNER' });
+
+  // Calculate statistics from real data
+  const stats = useMemo(() => {
+    if (isLoadingProjects || isLoadingUnits || isLoadingUsers) {
+      return {
+        totalProjects: 0,
+        totalUnits: 0,
+        totalOwners: 0,
+        occupancyRate: '0%',
+      };
+    }
+
+    const totalProjects = projects?.length || 0;
+    const totalUnits = units?.length || 0;
+    const totalOwners = users?.length || 0;
+
+    // Calculate occupancy (units with owners / total units)
+    const unitsWithOwners = units?.filter(unit => unit.ownerId).length || 0;
+    const occupancyRate = totalUnits > 0
+      ? ((unitsWithOwners / totalUnits) * 100).toFixed(1)
+      : '0';
+
+    return {
+      totalProjects,
+      totalUnits,
+      totalOwners,
+      occupancyRate: `${occupancyRate}%`,
+    };
+  }, [projects, units, users, isLoadingProjects, isLoadingUnits, isLoadingUsers]);
+
+  const isLoading = isLoadingProjects || isLoadingUnits || isLoadingUsers;
+
+  if (isLoading) {
+    return (
+      <div className="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
+        <div className="flex items-center justify-center h-[400px]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
       {/* Page Header - Responsive */}
@@ -15,37 +69,36 @@ export function DashboardPage() {
             Welcome back! Here's what's happening with your properties.
           </p>
         </div>
-        <Button className="w-full sm:w-auto">Add Property</Button>
       </div>
 
       {/* Stats Grid - Responsive */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 lg:gap-6 mb-6 md:mb-8">
         <StatsCard
-          title="Total Properties"
-          value="24"
-          change="+2 this month"
-          changeType="positive"
+          title="Total Projects"
+          value={stats.totalProjects.toString()}
+          change="Active projects"
+          changeType="neutral"
           icon={Building2}
         />
         <StatsCard
           title="Total Units"
-          value="448"
-          change="+12 this month"
-          changeType="positive"
+          value={stats.totalUnits.toString()}
+          change="Property units"
+          changeType="neutral"
           icon={Home}
         />
         <StatsCard
           title="Occupancy Rate"
-          value="94.2%"
-          change="+2.1% from last month"
+          value={stats.occupancyRate}
+          change="Units with owners"
           changeType="positive"
           icon={Users}
         />
         <StatsCard
-          title="Monthly Revenue"
-          value="$892,400"
-          change="+8.3% from last month"
-          changeType="positive"
+          title="Total Owners"
+          value={stats.totalOwners.toString()}
+          change="Registered owners"
+          changeType="neutral"
           icon={DollarSign}
         />
       </div>
@@ -54,7 +107,7 @@ export function DashboardPage() {
       <div className="mb-6 md:mb-8">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <h2 className="text-xl md:text-2xl font-semibold">Properties Overview</h2>
-          <Button variant="outline" className="w-full sm:w-auto">View All</Button>
+          <Button onClick={() => router.push('/projects')} variant="outline" className="w-full sm:w-auto">View All</Button>
         </div>
         <PropertiesTable />
       </div>

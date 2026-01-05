@@ -22,12 +22,14 @@ import {
   MessageSquare,
   Download,
   Edit,
-  AlertCircle
+  AlertCircle,
+  Eye
 } from 'lucide-react'
 import { useHandover, useHandoverMutations } from '@/lib/hooks/use-handovers'
 import { useAuth } from '@/contexts/AuthContext'
 import { HandoverStatusBadge } from '@/components/handover/HandoverStatusBadge'
 import { MessageThread } from '@/components/handover/MessageThread'
+import { OwnerChecklistDialog } from '@/components/handover/OwnerChecklistDialog'
 import { format } from 'date-fns'
 import {
   getAllowedActions,
@@ -90,6 +92,7 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
   // Dialog states
   const [sendDialog, setSendDialog] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState(false)
+  const [ownerChecklistDialog, setOwnerChecklistDialog] = useState(false)
   const [requestChangesDialog, setRequestChangesDialog] = useState(false)
   const [adminConfirmDialog, setAdminConfirmDialog] = useState(false)
   const [completeDialog, setCompleteDialog] = useState(false)
@@ -150,8 +153,9 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
     mutate()
   }
 
-  const handleOwnerConfirm = async () => {
-    await ownerConfirm(id, { acknowledgement })
+  const handleOwnerConfirm = async (data: { acknowledgement?: string; itemUpdates?: any[] }) => {
+    await ownerConfirm(id, data)
+    setOwnerChecklistDialog(false)
     setConfirmDialog(false)
     setAcknowledgement('')
     mutate()
@@ -379,41 +383,253 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
             </CardContent>
           </Card>
 
+          {/* Debug Info (remove in production) */}
+          {process.env.NODE_ENV === 'development' && (
+            <Alert>
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription className="text-xs">
+                <strong>Debug:</strong> Items array: {handover.items ? `${handover.items.length} items` : 'undefined'} |
+                Attachments: {handover.attachments ? `${handover.attachments.length} files` : 'undefined'}
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Checklist Items */}
-          {handover.items && handover.items.length > 0 && (
+          {handover.items && handover.items.length > 0 ? (
             <Card>
-              <CardHeader>
-                <CardTitle>Checklist Items</CardTitle>
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <CheckCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Handover Checklist</CardTitle>
+                      <CardDescription className="text-xs mt-0.5">
+                        {handover.items.length} items • {handover.items.filter(i => i.status === HandoverItemStatus.OK).length} OK • {handover.items.filter(i => i.status === HandoverItemStatus.NOT_OK).length} Issues
+                      </CardDescription>
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-6">
                 <div className="space-y-4">
-                  {handover.items.map((item) => (
-                    <div key={item.id} className="flex items-start justify-between p-3 border rounded-lg">
-                      <div className="space-y-1 flex-1">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{item.label}</span>
-                          <Badge variant="outline" className="text-xs">
-                            {item.category}
-                          </Badge>
-                        </div>
-                        {item.notes && (
-                          <p className="text-sm text-muted-foreground">{item.notes}</p>
-                        )}
-                        {(item.expectedValue || item.actualValue) && (
-                          <div className="flex gap-4 text-sm">
-                            {item.expectedValue && (
-                              <span>Expected: {item.expectedValue}</span>
-                            )}
+                  {/* Group by category */}
+                  {Object.entries(
+                    handover.items.reduce((acc, item) => {
+                      const cat = item.category || 'General'
+                      if (!acc[cat]) acc[cat] = []
+                      acc[cat].push(item)
+                      return acc
+                    }, {} as Record<string, typeof handover.items>)
+                  ).map(([category, items]) => (
+                    <div key={category} className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                          {category}
+                        </h4>
+                        <div className="h-px flex-1 bg-border" />
+                      </div>
+                      {items.map((item) => (
+                        <div key={item.id} className="flex items-start justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="space-y-2 flex-1">
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1">
+                                <span className="font-medium block">{item.label}</span>
+                                {item.expectedValue && (
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    Expected: {item.expectedValue}
+                                  </p>
+                                )}
+                              </div>
+                              <Badge
+                                variant={item.status === HandoverItemStatus.OK ? 'default' : item.status === HandoverItemStatus.NOT_OK ? 'destructive' : 'secondary'}
+                                className="text-xs"
+                              >
+                                {item.status === HandoverItemStatus.OK && <CheckCircle className="h-3 w-3 mr-1" />}
+                                {item.status === HandoverItemStatus.NOT_OK && <XCircle className="h-3 w-3 mr-1" />}
+                                {item.status}
+                              </Badge>
+                            </div>
                             {item.actualValue && (
-                              <span>Actual: {item.actualValue}</span>
+                              <div className="flex items-start gap-2 text-sm">
+                                <span className="text-muted-foreground">Actual:</span>
+                                <span className="font-medium">{item.actualValue}</span>
+                              </div>
+                            )}
+                            {item.notes && (
+                              <div className="bg-muted/50 rounded-md p-2 mt-2">
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{item.notes}</p>
+                              </div>
+                            )}
+                            {item.status === HandoverItemStatus.NOT_OK && (
+                              <Alert variant="destructive" className="mt-2">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertDescription className="text-xs">
+                                  Issue reported by owner - requires admin attention
+                                </AlertDescription>
+                              </Alert>
                             )}
                           </div>
-                        )}
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <CheckCircle className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Handover Checklist</CardTitle>
+                    <CardDescription className="text-xs mt-0.5">
+                      No checklist items
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="text-center py-8">
+                  <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-sm text-muted-foreground">
+                    No checklist items have been added to this handover yet.
+                  </p>
+                  {isAdmin && isEditable && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => router.push(`/handovers/${id}/edit`)}
+                    >
+                      <Edit className="h-4 w-4 mr-2" />
+                      Edit & Add Items
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Generated PDF Document */}
+          {handover.status === HandoverStatus.COMPLETED && handover.documents && handover.documents.length > 0 && (
+            <Card>
+              <CardHeader className="bg-green-50 dark:bg-green-950/20 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Handover Agreement (PDF)</CardTitle>
+                    <CardDescription className="text-xs mt-0.5">
+                      Generated on {format(new Date(handover.completedAt!), 'PPP')}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                {handover.documents.map((doc) => (
+                  <div key={doc.id} className="space-y-4">
+                    {/* Document Info */}
+                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 bg-red-100 dark:bg-red-900/30 rounded flex items-center justify-center">
+                          <FileText className="h-6 w-6 text-red-600 dark:text-red-400" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{doc.title || `Handover Agreement v${doc.version}`}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {(doc.sizeBytes / 1024).toFixed(1)} KB • PDF Document
+                          </p>
+                        </div>
                       </div>
-                      <Badge className={getItemStatusColor(item.status)}>
-                        {item.status}
+                      <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Completed
                       </Badge>
                     </div>
+
+                    {/* Actions */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <Button
+                        variant="default"
+                        className="w-full"
+                        onClick={() => window.open(doc.url, '_blank')}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View PDF
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => {
+                          const link = document.createElement('a')
+                          link.href = doc.url
+                          link.download = `handover-${handover.unit?.unitNumber || handover.id}.pdf`
+                          link.click()
+                        }}
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        Download PDF
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Attachments */}
+          {handover.attachments && handover.attachments.length > 0 && (
+            <Card>
+              <CardHeader className="bg-muted/30 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Attachments</CardTitle>
+                    <CardDescription className="text-xs mt-0.5">
+                      {handover.attachments.length} file{handover.attachments.length !== 1 ? 's' : ''}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {handover.attachments.map((attachment) => (
+                    <a
+                      key={attachment.id}
+                      href={attachment.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="h-12 w-12 bg-muted rounded flex items-center justify-center flex-shrink-0">
+                        {attachment.mimeType.startsWith('image/') ? (
+                          <img
+                            src={attachment.url}
+                            alt={attachment.caption || 'Attachment'}
+                            className="h-12 w-12 object-cover rounded"
+                          />
+                        ) : (
+                          <FileText className="h-6 w-6 text-muted-foreground" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {attachment.caption || attachment.key.split('/').pop()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {(attachment.sizeBytes / 1024).toFixed(1)} KB
+                        </p>
+                      </div>
+                      <Download className="h-4 w-4 text-muted-foreground" />
+                    </a>
                   ))}
                 </div>
               </CardContent>
@@ -439,7 +655,29 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
                 <CardTitle className="text-base">Actions</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="space-y-2 pt-6">
+              {/* Show message when no actions available for owner */}
+              {!isAdmin && allowedActions.length === 1 && allowedActions[0] === 'view' && (
+                <div className="text-center py-6">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm font-medium mb-1">No Actions Available</p>
+                  <p className="text-xs text-muted-foreground">
+                    {handover.status === HandoverStatus.DRAFT &&
+                      "This handover is still in draft. You'll be able to take action once the admin sends it to you."}
+                    {handover.status === HandoverStatus.OWNER_CONFIRMED &&
+                      "You've confirmed this handover. Waiting for admin confirmation."}
+                    {handover.status === HandoverStatus.ADMIN_CONFIRMED &&
+                      "This handover has been confirmed. Waiting for completion."}
+                    {handover.status === HandoverStatus.COMPLETED &&
+                      "This handover has been completed."}
+                    {handover.status === HandoverStatus.CANCELLED &&
+                      "This handover has been cancelled."}
+                    {handover.status === HandoverStatus.CHANGES_REQUESTED &&
+                      "Waiting for admin to address your requested changes."}
+                  </p>
+                </div>
+              )}
+
               {isEditable && allowedActions.includes('edit') && (
                 <Button
                   variant="outline"
@@ -464,7 +702,13 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
               {allowedActions.includes('owner-confirm') && (
                 <Button
                   className="w-full"
-                  onClick={() => setConfirmDialog(true)}
+                  onClick={() => {
+                    if (handover.items && handover.items.length > 0) {
+                      setOwnerChecklistDialog(true)
+                    } else {
+                      setConfirmDialog(true)
+                    }
+                  }}
                 >
                   <CheckCircle className="h-4 w-4 mr-2" />
                   Confirm Handover
@@ -591,7 +835,7 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
         </DialogContent>
       </Dialog>
 
-      {/* Owner Confirm Dialog */}
+      {/* Owner Confirm Dialog (when no items to check) */}
       <Dialog open={confirmDialog} onOpenChange={setConfirmDialog}>
         <DialogContent>
           <DialogHeader>
@@ -610,12 +854,23 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
             <Button variant="outline" onClick={() => setConfirmDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleOwnerConfirm} disabled={isMutating}>
+            <Button onClick={() => handleOwnerConfirm({ acknowledgement })} disabled={isMutating}>
               Confirm Handover
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Owner Checklist Dialog (when items need checking) */}
+      {handover && handover.items && handover.items.length > 0 && (
+        <OwnerChecklistDialog
+          open={ownerChecklistDialog}
+          onOpenChange={setOwnerChecklistDialog}
+          items={handover.items}
+          onConfirm={handleOwnerConfirm}
+          isLoading={isMutating}
+        />
+      )}
 
       {/* Request Changes Dialog */}
       <Dialog open={requestChangesDialog} onOpenChange={setRequestChangesDialog}>

@@ -26,13 +26,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AttachmentUploader } from './AttachmentUploader'
-import { useCreateSnagging, useUploadFiles } from '@/lib/hooks/use-snagging'
+import { useCreateSnagging } from '@/lib/hooks/use-snagging'
 import { CreateSnaggingDto, SnaggingPriority } from '@/lib/types/snagging.types'
 import { Loader2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUnits } from '@/lib/hooks/use-units'
+import { unitDocumentsService } from '@/lib/api/unit-documents.service'
 
 // Create schema factory to handle conditional unitId validation
 const createSnaggingSchema = (hasUnitId: boolean) => z.object({
@@ -64,7 +65,6 @@ export function SnaggingCreateDialog({
   const { userRole, userId } = useAuth()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const createSnagging = useCreateSnagging()
-  const uploadFiles = useUploadFiles()
 
   // Fetch units for selection when no unitId provided
   const { units } = useUnits(unitId ? {} : { ownerId: userRole === 'owner' && userId ? userId : undefined })
@@ -99,44 +99,32 @@ export function SnaggingCreateDialog({
     try {
       setIsSubmitting(true)
 
-      // Skip upload for now - make attachments optional
+      // Upload attachments to Cloudinary
       let attachments: CreateSnaggingDto['attachments'] = []
 
       // Only try to upload if there are attachments
       if (data.attachments && data.attachments.length > 0) {
         try {
-          // For now, skip actual upload and just create dummy attachments
-          // This allows testing without R2 configuration
-          console.log('Skipping file upload for testing. Files selected:', data.attachments.length)
+          console.log('Uploading files to Cloudinary. Files selected:', data.attachments.length)
 
-          // Create dummy attachment objects (without actual upload)
-          attachments = data.attachments.map(file => ({
-            url: `https://placeholder.com/${file.name}`,
-            fileName: file.name,
-            mimeType: file.type,
-            sizeBytes: file.size
-          }))
-
-          // Comment out actual upload for now
-          /*
-          const uploadResult = await uploadFiles.mutateAsync({
-            files: data.attachments,
-            onProgress: (fileName, progress) => {
-              console.log(`Uploading ${fileName}: ${progress}%`)
-            },
+          // Upload each file to Cloudinary
+          const uploadPromises = data.attachments.map(async (file) => {
+            const result = await unitDocumentsService.uploadFileDirect(file)
+            return {
+              url: result.publicUrl, // Use the full Cloudinary URL
+              fileName: file.name,
+              mimeType: file.type,
+              sizeBytes: file.size
+            }
           })
-          // Map URLs to attachment objects
-          attachments = data.attachments.map((file, index) => ({
-            url: uploadResult[index],
-            fileName: file.name,
-            mimeType: file.type,
-            sizeBytes: file.size
-          }))
-          */
+
+          attachments = await Promise.all(uploadPromises)
+          console.log('All files uploaded successfully to Cloudinary')
         } catch (uploadError) {
-          console.error('Upload failed, continuing without attachments:', uploadError)
-          // Continue without attachments instead of failing
-          toast.warning('Images could not be uploaded. Creating snagging without attachments.')
+          console.error('Upload failed:', uploadError)
+          toast.error('Failed to upload images. Please try again.')
+          setIsSubmitting(false)
+          return // Don't continue if upload fails
         }
       }
 
