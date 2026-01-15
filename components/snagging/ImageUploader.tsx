@@ -57,11 +57,6 @@ export function ImageUploader({
     async (files: FileList | null) => {
       if (!files || disabled) return;
 
-      // DEBUG: Show file info
-      Array.from(files).forEach((file, i) => {
-        alert(`File ${i + 1}: ${file.name} | Type: "${file.type}" | Size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
-      });
-
       const maxSizeBytes = maxSize * 1024 * 1024;
 
       const validateFile = (file: File): string | null => {
@@ -110,9 +105,6 @@ export function ImageUploader({
         errors.forEach((error) => toast.error(error));
       }
 
-      // DEBUG: Show validation result
-      toast.info(`Valid files: ${validFiles.length} / ${filesToAdd.length}`);
-
       if (validFiles.length > 0) {
         // Add new images with files (initially with local file for preview)
         const newImages: ImageWithComment[] = validFiles.map((file, index) => ({
@@ -136,12 +128,6 @@ export function ImageUploader({
             }
           );
 
-          // DEBUG: Show upload result
-          toast.success(`Upload complete! Got ${uploadResults.length} URLs`);
-          uploadResults.forEach((r, i) => {
-            toast.info(`URL ${i + 1}: ${r.publicUrl?.substring(0, 50)}...`);
-          });
-
           // Update images with uploaded URLs and public IDs from Cloudinary
           const finalImages = updatedImages.map((img, idx) => {
             const uploadIndex = idx - currentCount;
@@ -160,9 +146,7 @@ export function ImageUploader({
           onChange(finalImages);
         } catch (error: unknown) {
           const message =
-            error instanceof Error ? error.message : JSON.stringify(error);
-          alert(`Upload FAILED: ${message}`); // DEBUG
-          console.error('Upload error:', error);
+            error instanceof Error ? error.message : "Unknown error";
           toast.error(`Upload failed: ${message}`);
           // Remove failed uploads - revert to original value
           onChange(value);
@@ -211,7 +195,6 @@ export function ImageUploader({
   };
 
   const handleCameraCapture = () => {
-    alert('Camera button clicked'); // DEBUG
     if (cameraInputRef.current) {
       cameraInputRef.current.value = ''; // Reset input
       cameraInputRef.current.click();
@@ -284,10 +267,7 @@ export function ImageUploader({
           type="file"
           accept="image/*"
           capture="environment"
-          onChange={(e) => {
-            alert(`Camera onChange fired! Files: ${e.target.files?.length || 0}`); // DEBUG
-            handleFileSelect(e.target.files);
-          }}
+          onChange={(e) => handleFileSelect(e.target.files)}
           className="hidden"
           disabled={disabled}
         />
