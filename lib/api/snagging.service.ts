@@ -198,7 +198,8 @@ class SnaggingService {
         }
       })
 
-      xhr.addEventListener('error', () => {
+      xhr.addEventListener('error', (e) => {
+        alert(`XHR Error - Status: ${xhr.status}, ReadyState: ${xhr.readyState}, URL: ${baseURL}/uploads/cloudinary/direct`);
         reject(new Error('Upload failed - network error'))
       })
 
@@ -207,7 +208,9 @@ class SnaggingService {
       })
 
       // Updated endpoint: Cloudinary direct upload
-      xhr.open('POST', `${baseURL}/uploads/cloudinary/direct`)
+      const uploadUrl = `${baseURL}/uploads/cloudinary/direct`;
+      alert(`Uploading to: ${uploadUrl}`); // DEBUG
+      xhr.open('POST', uploadUrl)
       xhr.timeout = 120000 // 2 minute timeout for large camera photos
 
       // Get auth token from cookies
