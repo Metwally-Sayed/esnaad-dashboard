@@ -36,6 +36,9 @@ import { useUnits } from '@/lib/hooks/use-units'
 import { DatePicker } from '@/components/ui/date-picker'
 import { HandoverItemsBuilder, HandoverItemData } from '@/components/handover/HandoverItemsBuilder'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { unitsService } from '@/lib/api/units.service'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { AlertCircle, ExternalLink } from 'lucide-react'
 
 // Create schema factory to handle conditional unitId validation
 const createHandoverSchema = (hasUnitId: boolean) => z.object({
@@ -82,6 +85,11 @@ export function HandoverCreateDialog({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [items, setItems] = useState<HandoverItemData[]>([])
   const [itemsValid, setItemsValid] = useState(true)
+  const [checkingExisting, setCheckingExisting] = useState(false)
+  const [existingHandover, setExistingHandover] = useState<{
+    id: string
+    status: string
+  } | null>(null)
   const createHandover = useCreateHandover()
 
   // Fetch units for selection when no unitId provided
@@ -98,7 +106,31 @@ export function HandoverCreateDialog({
     },
   })
 
-  // Reset form when dialog opens/closes
+  // Check for existing handover when unitId changes or dialog opens
+  const checkForExistingHandover = async (checkUnitId: string) => {
+    try {
+      setCheckingExisting(true)
+      setExistingHandover(null)
+
+      const handoverData = await unitsService.getUnitHandover(checkUnitId)
+
+      if (handoverData.exists && handoverData.handover && handoverData.handover.status !== 'CANCELLED') {
+        // Found active handover
+        setExistingHandover({
+          id: handoverData.handover.id,
+          status: handoverData.handover.status
+        })
+        toast.error('This unit already has an active handover')
+      }
+    } catch (error: any) {
+      console.error('Error checking for existing handover:', error)
+      // Don't block on error, allow creation to proceed and let backend validate
+    } finally {
+      setCheckingExisting(false)
+    }
+  }
+
+  // Reset form when dialog opens/closes and check for existing handover
   useEffect(() => {
     if (open) {
       form.reset({
@@ -107,8 +139,24 @@ export function HandoverCreateDialog({
         notes: '',
       })
       setItems([])
+      setExistingHandover(null)
+
+      // Check for existing handover if unitId is provided
+      if (unitId) {
+        checkForExistingHandover(unitId)
+      }
     }
   }, [open, unitId, form])
+
+  // Check for existing handover when unit is selected from dropdown
+  useEffect(() => {
+    const subscription = form.watch((value, { name }) => {
+      if (name === 'unitId' && value.unitId && !unitId) {
+        checkForExistingHandover(value.unitId)
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [form.watch, unitId])
 
   const onSubmit = async (data: CreateHandoverFormData) => {
     try {
@@ -125,6 +173,13 @@ export function HandoverCreateDialog({
 
       if (!finalUnitId) {
         toast.error('Please select a unit')
+        setIsSubmitting(false)
+        return
+      }
+
+      // Block submission if existing handover found
+      if (existingHandover) {
+        toast.error('Cannot create handover - this unit already has an active handover')
         setIsSubmitting(false)
         return
       }
@@ -196,6 +251,32 @@ export function HandoverCreateDialog({
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {/* Existing Handover Warning */}
+            {existingHandover && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Handover Already Exists</AlertTitle>
+                <AlertDescription className="flex items-center justify-between">
+                  <span>
+                    This unit already has an active handover (Status: {existingHandover.status}).
+                    Only one handover per unit is allowed.
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      onOpenChange(false)
+                      router.push(`/handovers/${existingHandover.id}`)
+                    }}
+                    className="ml-4"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    View Existing
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Tabs defaultValue="basic" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="basic">Basic Info</TabsTrigger>
@@ -336,7 +417,7 @@ export function HandoverCreateDialog({
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting || (items.length > 0 && !itemsValid)}
+                disabled={isSubmitting || (items.length > 0 && !itemsValid) || !!existingHandover || checkingExisting}
               >
                 {isSubmitting ? (
                   <>

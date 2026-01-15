@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { SWRProvider } from "@/components/providers/swr-provider";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -133,11 +134,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <SWRProvider>
-          <AuthProvider>
-            <LayoutContent>{children}</LayoutContent>
-          </AuthProvider>
-        </SWRProvider>
+        <ErrorBoundary>
+          <SWRProvider>
+            <AuthProvider>
+              <LayoutContent>{children}</LayoutContent>
+            </AuthProvider>
+          </SWRProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );

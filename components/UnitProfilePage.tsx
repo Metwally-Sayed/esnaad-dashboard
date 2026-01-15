@@ -6,13 +6,16 @@ import { Button } from './ui/button';
 import { Pencil, UserPlus, FileDown, ChevronLeft } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
+import { UnitHandoverWidget } from './handover/UnitHandoverWidget';
+import { UnitSnaggingWidget } from './snagging/UnitSnaggingWidget';
 
 interface UnitProfilePageProps {
+  unitId?: string;
   onBack?: () => void;
   onEdit?: () => void;
 }
 
-export function UnitProfilePage({ onBack, onEdit }: UnitProfilePageProps) {
+export function UnitProfilePage({ unitId, onBack, onEdit }: UnitProfilePageProps) {
   const { userRole } = useAuth();
   // Mock data - in a real app this would come from props or API
   const unit = {
@@ -165,6 +168,18 @@ export function UnitProfilePage({ onBack, onEdit }: UnitProfilePageProps) {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Handover Widget - Shows handover status and acceptance UI */}
+          {unitId && <UnitHandoverWidget unitId={unitId} unitName={`Unit ${unit.unitCode}`} />}
+
+          {/* Snagging Widget - Shows snagging reports (issues found during inspection) */}
+          {unitId && (
+            <UnitSnaggingWidget
+              unitId={unitId}
+              userRole={isAdmin ? 'ADMIN' : 'OWNER'}
+              onCreateSnagging={isAdmin ? onEdit : undefined}
+            />
           )}
 
           {/* Additional Info Placeholder */}

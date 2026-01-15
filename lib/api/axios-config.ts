@@ -47,7 +47,12 @@ api.interceptors.response.use(
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
     // Handle 401 Unauthorized (token expired)
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    // Skip token refresh logic for auth endpoints (login, register, etc.)
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/login') ||
+                           originalRequest.url?.includes('/auth/register') ||
+                           originalRequest.url?.includes('/auth/verify-otp')
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       originalRequest._retry = true
 
       const refreshToken = Cookies.get(REFRESH_TOKEN_KEY)

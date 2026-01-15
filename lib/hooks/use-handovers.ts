@@ -433,10 +433,10 @@ export function useHandoverMutations() {
 
 // Simple hook for creating handovers (used by dialog)
 export function useCreateHandover() {
-  const [isLoading, setIsLoading] = useState(false)
+  const [isPending, setIsPending] = useState(false)
 
   const mutateAsync = async (data: CreateHandoverDto) => {
-    setIsLoading(true)
+    setIsPending(true)
     try {
       const handover = await handoverService.create(data)
 
@@ -453,12 +453,12 @@ export function useCreateHandover() {
       toast.error(error.response?.data?.message || 'Failed to create handover')
       throw error
     } finally {
-      setIsLoading(false)
+      setIsPending(false)
     }
   }
 
   return {
     mutateAsync,
-    isLoading
+    isPending
   }
 }

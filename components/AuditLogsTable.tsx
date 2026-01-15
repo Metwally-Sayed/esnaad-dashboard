@@ -1,5 +1,6 @@
 'use client'
 
+import { useCallback, memo } from 'react'
 import {
   Table,
   TableBody,
@@ -52,7 +53,7 @@ interface AuditLogsTableProps {
   compact?: boolean
 }
 
-export function AuditLogsTable({
+export const AuditLogsTable = memo(function AuditLogsTable({
   auditLogs,
   isLoading,
   showActor = true,
@@ -61,8 +62,8 @@ export function AuditLogsTable({
 }: AuditLogsTableProps) {
   const { formatDate, formatRelativeTime } = useAuditFormatters()
 
-  // Get icon for action
-  const getActionIcon = (action: string) => {
+  // Memoize icon lookup to avoid recreating JSX on every render
+  const getActionIcon = useCallback((action: string) => {
     if (action.includes('CREATED')) return <PlusCircle className="h-4 w-4" />
     if (action.includes('UPDATED')) return <EditIcon className="h-4 w-4" />
     if (action.includes('DELETED')) return <Trash2 className="h-4 w-4" />
@@ -70,17 +71,17 @@ export function AuditLogsTable({
     if (action.includes('UNASSIGNED')) return <UserMinus className="h-4 w-4" />
     if (action.includes('STATUS_CHANGED')) return <Activity className="h-4 w-4" />
     return <Activity className="h-4 w-4" />
-  }
+  }, [])
 
-  // Get badge variant
-  const getBadgeVariant = (action: string): any => {
+  // Memoize badge variant calculation
+  const getBadgeVariant = useCallback((action: string): any => {
     const color = getAuditActionColor(action as any)
     if (color === 'success') return 'default'
     if (color === 'warning') return 'secondary'
     if (color === 'destructive') return 'destructive'
     if (color === 'info') return 'outline'
     return 'outline'
-  }
+  }, [])
 
   if (isLoading) {
     return (
@@ -290,4 +291,4 @@ export function AuditLogsTable({
       </div>
     </div>
   )
-}
+})

@@ -99,8 +99,7 @@ export default function EditHandoverPage({ params }: { params: Promise<{ id: str
   }
 
   // Check if handover can be edited
-  const canEdit = handover.status === HandoverStatus.DRAFT ||
-                  handover.status === HandoverStatus.CHANGES_REQUESTED
+  const canEdit = handover.status === HandoverStatus.DRAFT
 
   if (!canEdit) {
     return (
@@ -177,16 +176,6 @@ export default function EditHandoverPage({ params }: { params: Promise<{ id: str
                 rows={6}
               />
             </div>
-
-            {/* Info Alert */}
-            {handover.status === HandoverStatus.CHANGES_REQUESTED && (
-              <Alert>
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription>
-                  The owner has requested changes to this handover. Make the necessary updates and send it back for review.
-                </AlertDescription>
-              </Alert>
-            )}
 
             {/* Actions */}
             <div className="flex gap-3">

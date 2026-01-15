@@ -1,8 +1,14 @@
-'use client';
+"use client";
 
-import { AlertTriangle, Building2, FileText, FolderOpen, Home, LayoutDashboard, Settings } from 'lucide-react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import {
+  Building2,
+  FolderOpen,
+  Home,
+  LayoutDashboard,
+  Mail,
+} from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -14,17 +20,21 @@ export function OwnerDashboardSidebar() {
   const pathname = usePathname();
 
   const navItems: NavItem[] = [
-    { icon: LayoutDashboard, label: 'Dashboard', href: '/' },
-    { icon: Home, label: 'My Units', href: '/units' },
-    { icon: FileText, label: 'Handovers', href: '/handovers' },
-    { icon: AlertTriangle, label: 'Snagging', href: '/snaggings' },
-    { icon: FolderOpen, label: 'Documents', href: '/documents' },
-    { icon: Settings, label: 'Settings', href: '/settings' },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+    { icon: Home, label: "My Units", href: "/units" },
+    // Snagging reports are accessed via Unit Profile widget
+    // Owners view snaggings for each unit on the unit detail page
+    // Access: /units/[unitId] → UnitSnaggingWidget
+    //
+    // Handovers are also accessed via Unit Profile
+    // Access: /units/[unitId] → UnitHandoverWidget
+    { icon: Mail, label: "Requests", href: "/requests" },
+    { icon: FolderOpen, label: "Documents", href: "/documents" },
   ];
 
   const isActive = (href: string) => {
-    if (href === '/') {
-      return pathname === '/';
+    if (href === "/") {
+      return pathname === "/";
     }
     return pathname.startsWith(href);
   };
@@ -50,8 +60,8 @@ export function OwnerDashboardSidebar() {
                   href={item.href}
                   className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                     active
-                      ? 'bg-sidebar-accent text-sidebar-accent-foreground'
-                      : 'text-sidebar-foreground hover:bg-sidebar-accent/50'
+                      ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                      : "text-sidebar-foreground hover:bg-sidebar-accent/50"
                   }`}
                 >
                   <item.icon className="h-5 w-5" />

@@ -1,160 +1,119 @@
 'use client'
 
-import { useState } from 'react'
-import { useUnitSnaggings } from '@/lib/hooks/use-snagging'
-import { SnaggingFilters as FiltersType } from '@/lib/types/snagging.types'
-import { SnaggingListTable } from './SnaggingListTable'
-import { SnaggingCreateDialog } from './SnaggingCreateDialog'
-import { Button } from '@/components/ui/button'
+import { Snagging } from '@/lib/types/snagging.types'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { AlertTriangle, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
-import { useAuth } from '@/contexts/AuthContext'
+import { Button } from '@/components/ui/button'
+import { Loader2, FileText, Calendar, Building2 } from 'lucide-react'
+import { format } from 'date-fns'
 
 interface SnaggingListProps {
-  unitId: string
-  unitNumber?: string
-  ownerId?: string
+  snaggings: Snagging[]
+  isLoading: boolean
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasNext?: boolean
+    hasPrev?: boolean
+  }
+  onPageChange?: (page: number) => void
+  onSnaggingClick: (id: string) => void
 }
 
-export function SnaggingList({ unitId, unitNumber, ownerId }: SnaggingListProps) {
-  const { userId, userRole } = useAuth()
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [filters, setFilters] = useState<FiltersType>({
-    page: 1,
-    limit: 5, // Smaller limit for embedded view
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
-  })
-
-  // Fetch snaggings for this unit
-  const { data, isLoading } = useUnitSnaggings(unitId, filters)
-
-  const isOwner = ownerId && ownerId === userId
-  const isAdmin = userRole === 'admin'
-  // Admin can always create, owner can create for their units
-  const canCreate = isAdmin || isOwner
-
-  // Debug logging
-  console.log('SnaggingList permissions:', {
-    ownerId,
-    userId,
-    userRole,
-    isOwner,
-    isAdmin,
-    canCreate
-  })
-
-  const handlePageChange = (page: number) => {
-    setFilters((prev) => ({ ...prev, page }))
+export function SnaggingList({
+  snaggings,
+  isLoading,
+  pagination,
+  onPageChange,
+  onSnaggingClick
+}: SnaggingListProps) {
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    )
   }
 
-  const handleSnaggingCreated = (snaggingId: string) => {
-    // You could navigate to the snagging or just refresh the list
-    setShowCreateDialog(false)
-  }
-
-  const getStatusCounts = () => {
-    if (!data?.data) return { open: 0, inProgress: 0, resolved: 0 }
-
-    return {
-      open: data.data.filter((s) => s.status === 'OPEN').length,
-      inProgress: data.data.filter((s) => s.status === 'IN_PROGRESS').length,
-      resolved: data.data.filter((s) => s.status === 'RESOLVED').length,
-    }
-  }
-
-  const statusCounts = getStatusCounts()
-
-  return (
-    <>
+  if (snaggings.length === 0) {
+    return (
       <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-primary" />
-              <CardTitle>Snagging Items</CardTitle>
-              {data?.pagination?.total && data.pagination.total > 0 && (
-                <Badge variant="secondary">{data.pagination.total}</Badge>
-              )}
-            </div>
-            {canCreate && (
-              <Button
-                size="sm"
-                onClick={() => setShowCreateDialog(true)}
-              >
-                <Plus className="h-4 w-4 mr-1" />
-                Report Issue
-              </Button>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Status Summary */}
-          {data?.pagination?.total && data.pagination.total > 0 && (
-            <div className="flex items-center gap-4 mb-4 text-sm">
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-red-500" />
-                <span className="text-muted-foreground">Open:</span>
-                <span className="font-medium">{statusCounts.open}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                <span className="text-muted-foreground">In Progress:</span>
-                <span className="font-medium">{statusCounts.inProgress}</span>
-              </div>
-              <div className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                <span className="text-muted-foreground">Resolved:</span>
-                <span className="font-medium">{statusCounts.resolved}</span>
-              </div>
-            </div>
-          )}
-
-          {/* Snagging Table */}
-          <SnaggingListTable
-            snaggings={data?.data || []}
-            isLoading={isLoading}
-          />
-
-          {/* Pagination */}
-          {data?.pagination && data.pagination.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 pt-4 border-t">
-              <div className="text-muted-foreground text-sm">
-                Page {data.pagination.page} of {data.pagination.totalPages}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={data.pagination.page === 1}
-                  onClick={() => handlePageChange(data.pagination.page - 1)}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={data.pagination.page === data.pagination.totalPages}
-                  onClick={() => handlePageChange(data.pagination.page + 1)}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          )}
+        <CardContent className="py-12 text-center">
+          <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <p className="text-muted-foreground">No snagging reports found</p>
         </CardContent>
       </Card>
+    )
+  }
 
-      {/* Create Dialog */}
-      <SnaggingCreateDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        unitId={unitId}
-        unitNumber={unitNumber}
-        onSuccess={handleSnaggingCreated}
-      />
-    </>
+  return (
+    <div className="space-y-4">
+      {snaggings.map((snagging) => (
+        <Card
+          key={snagging.id}
+          className="cursor-pointer hover:border-primary transition-colors"
+          onClick={() => onSnaggingClick(snagging.id)}
+        >
+          <CardHeader>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-lg">{snagging.title}</CardTitle>
+                <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                  {snagging.description}
+                </p>
+              </div>
+              {snagging.pdfUrl && (
+                <FileText className="h-5 w-5 text-primary" />
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              {snagging.unit && (
+                <div className="flex items-center gap-1">
+                  <Building2 className="h-4 w-4" />
+                  <span>{snagging.unit.unitNumber}</span>
+                </div>
+              )}
+              <div className="flex items-center gap-1">
+                <Calendar className="h-4 w-4" />
+                <span>{format(new Date(snagging.createdAt), 'MMM d, yyyy')}</span>
+              </div>
+              {snagging.items && snagging.items.some(item => item.images && item.images.length > 0) && (
+                <span>{snagging.items.reduce((total, item) => total + (item.images?.length || 0), 0)} image{snagging.items.reduce((total, item) => total + (item.images?.length || 0), 0) !== 1 ? 's' : ''}</span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ))}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && onPageChange && (
+        <div className="flex items-center justify-between pt-4">
+          <p className="text-sm text-muted-foreground">
+            Page {pagination.page} of {pagination.totalPages}
+          </p>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page === 1}
+              onClick={() => onPageChange(pagination.page - 1)}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={pagination.page === pagination.totalPages}
+              onClick={() => onPageChange(pagination.page + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

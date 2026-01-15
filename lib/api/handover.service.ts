@@ -254,6 +254,46 @@ export const handoverService = {
     }
   },
 
+  // NEW SIMPLIFIED FLOW: Owner accepts handover (generates PDF immediately)
+  async acceptHandover(id: string): Promise<Handover & {
+    document?: {
+      id: string
+      url: string
+      key: string
+    }
+  }> {
+    try {
+      const response = await axios.post<{
+        success: boolean;
+        data: Handover & {
+          document?: {
+            id: string
+            url: string
+            key: string
+          }
+        };
+        message?: string
+      }>(
+        `${API_BASE}/${id}/accept`
+      )
+
+      // Show success message if provided
+      if (response.data.message) {
+        toast.success(response.data.message)
+      } else {
+        toast.success('Handover accepted successfully')
+      }
+
+      return response.data.data
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error ||
+                          error.response?.data?.message ||
+                          'Failed to accept handover'
+      toast.error(errorMessage)
+      throw error
+    }
+  },
+
   // Messages
   async getMessages(
     handoverId: string,

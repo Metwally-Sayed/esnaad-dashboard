@@ -96,6 +96,33 @@ class UnitsService {
     // Handle nested response structure
     return response.data.data || response.data
   }
+
+  /**
+   * Get handover status and PDF for a unit
+   * Owner can access their own unit's handover
+   * Admin can access any unit's handover
+   */
+  async getUnitHandover(unitId: string): Promise<{
+    exists: boolean
+    handover?: {
+      id: string
+      status: string
+      scheduledAt?: string
+      handoverAt?: string
+      ownerAcceptedAt?: string
+      pdfUrl?: string
+      adminSignature?: string
+      ownerSignature?: string
+      notes?: string
+      createdAt: string
+      updatedAt: string
+    }
+    message?: string
+  }> {
+    const response = await api.get(`/units/${unitId}/handover`)
+    // Handle nested response structure
+    return response.data.data || response.data
+  }
 }
 
 export const unitsService = new UnitsService()

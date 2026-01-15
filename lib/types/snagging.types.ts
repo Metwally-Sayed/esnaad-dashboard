@@ -1,171 +1,120 @@
 /**
- * Snagging Module Types
+ * Snagging Module Types (v2)
  */
 
 import { Role } from './auth.types'
 
-// Enums
-export enum SnaggingStatus {
-  OPEN = 'OPEN',
-  IN_PROGRESS = 'IN_PROGRESS',
-  RESOLVED = 'RESOLVED',
-  CLOSED = 'CLOSED'
-}
-
-export enum SnaggingPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT'
-}
-
 // Core Types
+export type SnaggingStatus = 'DRAFT' | 'SENT_TO_OWNER' | 'ACCEPTED' | 'CANCELLED'
+export type SnaggingSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+
+export interface SnaggingItemImage {
+  id: string
+  imageUrl: string
+  publicId?: string
+  caption?: string | null
+  sortOrder: number
+  createdAt: string
+}
+
+export interface SnaggingItem {
+  id: string
+  snaggingId: string
+  category: string
+  label: string
+  location: string
+  severity: SnaggingSeverity
+  notes?: string | null
+  sortOrder: number
+  images: SnaggingItemImage[]
+  createdAt: string
+}
+
 export interface Snagging {
   id: string
   title: string
-  description?: string | null
+  description: string
+  notes?: string | null
   status: SnaggingStatus
-  priority: SnaggingPriority
   unitId: string
+  ownerId: string
+  createdByAdminId: string
+  scheduledAt?: string | null
+  scheduledNote?: string | null
+  acceptedAt?: string | null
+  pdfUrl?: string | null
+  pdfPublicId?: string | null
+  createdAt: string
+  updatedAt: string
   unit?: {
     id: string
     unitNumber: string
     buildingName?: string | null
-    owner?: {
-      id: string
-      name: string | null
-      email: string
-    } | null
+    floor?: number | null
+    area?: number | null
+    bedrooms?: number | null
+    address?: string | null
   }
-  createdById: string
-  createdBy: {
+  owner?: {
     id: string
     name: string | null
     email: string
-    role: Role
+    phone?: string | null
+    nationalId?: string | null
   }
-  assignedToId?: string | null
-  assignedTo?: {
+  createdByAdmin?: {
     id: string
     name: string | null
     email: string
-  } | null
-  lastActivityAt: string
-  resolvedAt?: string | null
-  closedAt?: string | null
-  createdAt: string
-  updatedAt: string
-  _count?: {
-    messages: number
-    attachments: number
   }
+  items?: SnaggingItem[]
 }
 
-export interface SnaggingMessage {
+export interface SnaggingImage {
   id: string
   snaggingId: string
-  bodyTitle?: string | null
-  bodyText: string
-  content?: string // Keep for backward compatibility, map from bodyText
-  authorId?: string
-  authorUserId?: string
-  author: {
-    id: string
-    name: string | null
-    email: string
-    role: Role
-  }
-  attachments: SnaggingAttachment[]
-  isEdited?: boolean
-  editedAt?: string | null
-  createdAt: string
-  updatedAt: string
-}
-
-export interface SnaggingAttachment {
-  id: string
-  snaggingId?: string | null
-  messageId?: string | null
-  url: string
-  fileName: string
-  fileSize?: number | null
-  mimeType?: string | null
-  thumbnailUrl?: string | null
+  imageUrl: string
+  comment?: string | null
+  sortOrder: number
   createdAt: string
 }
 
 // DTOs
 export interface CreateSnaggingDto {
-  title: string
-  description?: string
-  priority: SnaggingPriority
   unitId: string
-  attachments?: Array<{
-    url: string
-    fileName: string
-    mimeType: string
-    sizeBytes: number
+  ownerId: string
+  title: string
+  description: string
+  images: Array<{
+    imageUrl: string
+    comment?: string
+    sortOrder: number
   }>
 }
 
-export interface UpdateSnaggingDto {
-  title?: string
-  description?: string
-  status?: SnaggingStatus
-  priority?: SnaggingPriority
-  assignedToId?: string | null
-}
-
-// Message DTOs
-export interface CreateSnaggingMessageDto {
-  bodyTitle?: string
-  bodyText: string
-  attachments?: Array<{
-    url: string
-    fileName: string
-    mimeType: string
-    sizeBytes: number
-  }>
-}
-
-export interface UpdateSnaggingMessageDto {
-  bodyTitle?: string
-  bodyText?: string
+export interface UpdateOwnerSignatureDto {
+  ownerSignatureUrl: string
 }
 
 // Filter Types
 export interface SnaggingFilters {
   page?: number
   limit?: number
-  search?: string
-  status?: SnaggingStatus | 'ALL'
-  priority?: SnaggingPriority | 'ALL'
   unitId?: string
-  createdById?: string
-  assignedToId?: string
-  sortBy?: 'createdAt' | 'updatedAt' | 'lastActivityAt' | 'priority'
-  sortOrder?: 'asc' | 'desc'
+  ownerId?: string
+  search?: string
 }
 
 // Response Types
 export interface SnaggingListResponse {
   data: Snagging[]
-  pagination: {
+  meta: {
     page: number
     limit: number
     total: number
     totalPages: number
-  }
-}
-
-export interface SnaggingMessagesResponse {
-  data: SnaggingMessage[]
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-    hasMore: boolean
+    hasNext: boolean
+    hasPrev: boolean
   }
 }
 
@@ -178,7 +127,8 @@ export interface PresignedUrlRequest {
 
 export interface PresignedUrlResponse {
   uploadUrl: string
-  fileUrl: string
+  publicUrl: string
+  key: string
   fields?: Record<string, string>
 }
 
@@ -187,5 +137,5 @@ export interface BatchPresignedUrlRequest {
 }
 
 export interface BatchPresignedUrlResponse {
-  urls: PresignedUrlResponse[]
+  uploads: PresignedUrlResponse[]
 }

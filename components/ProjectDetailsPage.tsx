@@ -1,7 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import * as z from 'zod'
+import Image from 'next/image'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card'
 import { Badge } from './ui/badge'
 import { Button } from './ui/button'
@@ -20,12 +24,34 @@ import {
   CheckCircle2,
   Plus,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CalendarIcon,
+  Loader2
 } from 'lucide-react'
 import { useProject, useProjectMutations, useProjectFormatters } from '@/lib/hooks/use-projects'
 import { useUnits, useUnitMutations } from '@/lib/hooks/use-units'
 import { useAuth } from '@/contexts/AuthContext'
-import { ProjectDialog } from './ProjectDialog'
+import { FormDialog } from './ui/form-dialog'
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from './ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from './ui/select'
+import { Input } from './ui/input'
+import { Textarea } from './ui/textarea'
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover'
+import { Calendar as CalendarComponent } from './ui/calendar'
 import { ProjectUnitsTable } from './ProjectUnitsTable'
 import { AuditLogsTable } from './AuditLogsTable'
 import { useProjectAuditLogs } from '@/lib/hooks/use-audit-logs'
@@ -40,7 +66,22 @@ import {
   AlertDialogTitle,
 } from './ui/alert-dialog'
 import { toast } from 'sonner'
-import { UnitFilters } from '@/lib/types/api.types'
+import { UnitFilters, UpdateProjectDto } from '@/lib/types/api.types'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
+
+// Form schema
+const projectSchema = z.object({
+  name: z.string().min(1, 'Project name is required').max(100),
+  description: z.string().optional(),
+  location: z.string().optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  status: z.enum(['active', 'completed', 'on-hold'] as const).optional(),
+  imageUrl: z.string().url('Invalid URL').optional().or(z.literal('')),
+})
+
+type ProjectFormData = z.infer<typeof projectSchema>
 
 interface ProjectDetailsPageProps {
   projectId: string
@@ -50,12 +91,46 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
   const router = useRouter()
   const { isAdmin } = useAuth()
   const { project, isLoading, error, mutate } = useProject(projectId)
-  const { deleteProject, isDeleting } = useProjectMutations()
+  const { deleteProject, isDeleting, updateProject, isUpdating } = useProjectMutations()
   const { deleteUnit, isDeleting: isDeletingUnit } = useUnitMutations()
   const { formatDate, formatStatus } = useProjectFormatters()
 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+
+  // Form initialization for edit dialog
+  const form = useForm<ProjectFormData>({
+    resolver: zodResolver(projectSchema),
+    defaultValues: {
+      name: '',
+      description: '',
+      location: '',
+      status: 'active',
+      imageUrl: '',
+    },
+  })
+
+  // Load project data when editing
+  useEffect(() => {
+    if (project && isEditDialogOpen) {
+      form.reset({
+        name: project.name,
+        description: project.description || '',
+        location: project.location || '',
+        startDate: project.startDate ? new Date(project.startDate) : undefined,
+        endDate: project.endDate ? new Date(project.endDate) : undefined,
+        status: project.status,
+        imageUrl: project.imageUrl || '',
+      })
+    }
+  }, [project, isEditDialogOpen, form])
+
+  // Reset form when dialog closes
+  useEffect(() => {
+    if (!isEditDialogOpen) {
+      form.reset()
+    }
+  }, [isEditDialogOpen, form])
 
   // Units state
   const [unitsFilters, setUnitsFilters] = useState<UnitFilters>({
@@ -84,9 +159,25 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
     }
   }
 
-  const handleProjectSaved = () => {
-    setIsEditDialogOpen(false)
-    mutate() // Refresh the project data
+  const handleProjectSubmit = async (data: ProjectFormData) => {
+    try {
+      const projectData = {
+        name: data.name,
+        description: data.description || undefined,
+        location: data.location || undefined,
+        startDate: data.startDate?.toISOString(),
+        endDate: data.endDate?.toISOString(),
+        status: data.status,
+        imageUrl: data.imageUrl || undefined,
+      }
+
+      await updateProject(projectId, projectData as UpdateProjectDto)
+      toast.success('Project updated successfully')
+      setIsEditDialogOpen(false)
+      mutate() // Refresh the project data
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to update project')
+    }
   }
 
   // Unit handlers
@@ -222,9 +313,11 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
           {/* Project Image */}
           {project.imageUrl && (
             <div className="mb-6">
-              <img
+              <Image
                 src={project.imageUrl}
                 alt={project.name}
+                width={1200}
+                height={256}
                 className="w-full h-64 object-cover rounded-lg"
               />
             </div>
@@ -433,12 +526,214 @@ export function ProjectDetailsPage({ projectId }: ProjectDetailsPageProps) {
 
       {/* Edit Dialog */}
       {isAdmin && (
-        <ProjectDialog
+        <FormDialog
           open={isEditDialogOpen}
           onOpenChange={setIsEditDialogOpen}
-          projectId={projectId}
-          onSave={handleProjectSaved}
-        />
+          title="Edit Project"
+          description="Update the project details below."
+          submitText="Update Project"
+          onSubmit={form.handleSubmit(handleProjectSubmit)}
+          isLoading={isUpdating}
+          maxWidth="lg"
+        >
+          <Form {...form}>
+            <div className="space-y-6">
+              {/* Project Name */}
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Project Name *</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter project name"
+                        disabled={isUpdating}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Description */}
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        {...field}
+                        placeholder="Enter project description"
+                        rows={3}
+                        disabled={isUpdating}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Provide a brief description of the project
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Location */}
+              <FormField
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Location</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter project location"
+                        disabled={isUpdating}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {/* Start Date */}
+                <FormField
+                  control={form.control}
+                  name="startDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>Start Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                              disabled={isUpdating}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* End Date */}
+                <FormField
+                  control={form.control}
+                  name="endDate"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>End Date</FormLabel>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant={"outline"}
+                              className={cn(
+                                "w-full pl-3 text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                              disabled={isUpdating}
+                            >
+                              {field.value ? (
+                                format(field.value, "PPP")
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <CalendarComponent
+                            mode="single"
+                            selected={field.value}
+                            onSelect={field.onChange}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              {/* Status */}
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      disabled={isUpdating}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select project status" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                        <SelectItem value="on-hold">On Hold</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Image URL */}
+              <FormField
+                control={form.control}
+                name="imageUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Image URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="url"
+                        placeholder="https://example.com/image.jpg"
+                        disabled={isUpdating}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Optional: Add a cover image URL for the project
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </Form>
+        </FormDialog>
       )}
 
       {/* Delete Confirmation Dialog */}

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Table,
@@ -52,7 +52,7 @@ interface UnitsTableProps {
   isDeleting?: boolean
 }
 
-export function UnitsTable({
+export const UnitsTable = memo(function UnitsTable({
   units,
   isLoading,
   onEdit,
@@ -63,20 +63,23 @@ export function UnitsTable({
   const { formatDate, formatArea } = useUnitFormatters()
   const [deleteUnitId, setDeleteUnitId] = useState<string | null>(null)
 
-  const handleView = (unitId: string) => {
+  // Memoize navigation callback
+  const handleView = useCallback((unitId: string) => {
     router.push(`/units/${unitId}`)
-  }
+  }, [router])
 
-  const handleDeleteClick = (unitId: string) => {
+  // Memoize delete click callback
+  const handleDeleteClick = useCallback((unitId: string) => {
     setDeleteUnitId(unitId)
-  }
+  }, [])
 
-  const handleDeleteConfirm = async () => {
+  // Memoize delete confirm callback
+  const handleDeleteConfirm = useCallback(async () => {
     if (deleteUnitId && onDelete) {
       await onDelete(deleteUnitId)
       setDeleteUnitId(null)
     }
-  }
+  }, [deleteUnitId, onDelete])
 
   if (isLoading) {
     return (
@@ -201,7 +204,7 @@ export function UnitsTable({
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" aria-label="Open unit actions menu">
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -260,4 +263,4 @@ export function UnitsTable({
       </AlertDialog>
     </>
   )
-}
+})

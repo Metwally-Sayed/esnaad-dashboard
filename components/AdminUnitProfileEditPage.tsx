@@ -10,8 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Save, X, ChevronLeft, Search, UserPlus, AlertCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { Textarea } from './ui/textarea';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
+import { SnaggingItemsBuilder, type SnaggingItem } from './snagging/SnaggingItemsBuilder';
+import { UnitSnaggingWidget } from './snagging/UnitSnaggingWidget';
 
 interface AdminUnitProfileEditPageProps {
+  unitId?: string;
   onBack?: () => void;
   onSave?: (data: any) => void;
   onCancel?: () => void;
@@ -26,7 +30,7 @@ const mockOwners = [
   { id: '5', name: 'David Chen', email: 'david.chen@email.com', nationalityId: '2345678905' },
 ];
 
-export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnitProfileEditPageProps) {
+export function AdminUnitProfileEditPage({ unitId, onBack, onSave, onCancel }: AdminUnitProfileEditPageProps) {
   // Form state
   const [formData, setFormData] = useState({
     unitCode: 'A-101',
@@ -51,6 +55,13 @@ export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnit
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [ownerSearch, setOwnerSearch] = useState('');
+
+  // Snagging creation dialog state
+  const [isCreateSnaggingOpen, setIsCreateSnaggingOpen] = useState(false);
+  const [snaggingTitle, setSnaggingTitle] = useState('');
+  const [snaggingDescription, setSnaggingDescription] = useState('');
+  const [snaggingItems, setSnaggingItems] = useState<SnaggingItem[]>([]);
+  const [isSubmittingSnagging, setIsSubmittingSnagging] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -109,6 +120,80 @@ export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnit
   const handleCancel = () => {
     if (onCancel) {
       onCancel();
+    }
+  };
+
+  /**
+   * Handle creating a new snagging report
+   */
+  const handleCreateSnagging = async () => {
+    if (!snaggingTitle.trim() || !snaggingDescription.trim()) {
+      alert('Title and description are required');
+      return;
+    }
+
+    if (snaggingItems.length === 0) {
+      alert('At least one item is required');
+      return;
+    }
+
+    if (!selectedOwner) {
+      alert('Please select an owner');
+      return;
+    }
+
+    setIsSubmittingSnagging(true);
+    try {
+      // Validate we have the required IDs
+      if (!unitId) {
+        throw new Error('Unit ID is required to create a snagging');
+      }
+
+      // Call API endpoint POST /api/snaggings with proper schema
+      const response = await fetch('http://localhost:8080/api/snaggings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`,
+        },
+        body: JSON.stringify({
+          unitId: unitId,
+          ownerId: formData.ownerId,
+          title: snaggingTitle,
+          description: snaggingDescription,
+          items: snaggingItems.map(item => ({
+            category: item.category,
+            label: item.label,
+            location: item.location,
+            severity: item.severity,
+            notes: item.notes,
+            images: item.images.map(img => ({
+              imageUrl: img.imageUrl,
+              publicId: img.publicId || '',
+              caption: img.caption || ''
+            }))
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create snagging');
+      }
+
+      alert('Snagging report created successfully!');
+
+      // Reset form
+      setSnaggingTitle('');
+      setSnaggingDescription('');
+      setSnaggingItems([]);
+      setIsCreateSnaggingOpen(false);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to create snagging report';
+      alert(message);
+      console.error('Error creating snagging:', error);
+    } finally {
+      setIsSubmittingSnagging(false);
     }
   };
 
@@ -570,6 +655,84 @@ export function AdminUnitProfileEditPage({ onBack, onSave, onCancel }: AdminUnit
           </Card>
         </div>
       </div>
+
+      {/* Snagging Widget - Shows snagging reports for this unit */}
+      <div className="mt-8">
+        <UnitSnaggingWidget
+          unitId={formData.unitCode}
+          userRole="ADMIN"
+          onCreateSnagging={() => setIsCreateSnaggingOpen(true)}
+        />
+      </div>
+
+      {/* Create Snagging Dialog */}
+      <Dialog open={isCreateSnaggingOpen} onOpenChange={setIsCreateSnaggingOpen}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create Snagging Report</DialogTitle>
+            <DialogDescription>
+              Create a new snagging report for Unit {formData.unitCode}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* Title */}
+            <div className="space-y-2">
+              <Label htmlFor="snagging-title">Report Title *</Label>
+              <Input
+                id="snagging-title"
+                placeholder="e.g., Electrical & Plumbing Issues"
+                value={snaggingTitle}
+                onChange={(e) => setSnaggingTitle(e.target.value)}
+              />
+            </div>
+
+            {/* Description */}
+            <div className="space-y-2">
+              <Label htmlFor="snagging-description">Description *</Label>
+              <Textarea
+                id="snagging-description"
+                placeholder="Describe the overall inspection findings..."
+                value={snaggingDescription}
+                onChange={(e) => setSnaggingDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+
+            {/* Items Builder */}
+            <div className="space-y-2">
+              <Label>Snagging Items *</Label>
+              <SnaggingItemsBuilder
+                value={snaggingItems}
+                onChange={setSnaggingItems}
+                disabled={isSubmittingSnagging}
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 justify-end pt-4 border-t">
+              <Button
+                variant="outline"
+                onClick={() => setIsCreateSnaggingOpen(false)}
+                disabled={isSubmittingSnagging}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateSnagging}
+                disabled={
+                  isSubmittingSnagging ||
+                  !snaggingTitle.trim() ||
+                  !snaggingDescription.trim() ||
+                  snaggingItems.length === 0
+                }
+              >
+                {isSubmittingSnagging ? 'Creating...' : 'Create Report'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

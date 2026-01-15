@@ -1,5 +1,5 @@
 /**
- * Snagging Hooks
+ * Snagging Hooks (v2)
  * SWR hooks for snagging data fetching and mutations
  */
 
@@ -10,12 +10,9 @@ import useSWRMutation from 'swr/mutation'
 import snaggingService from '@/lib/api/snagging.service'
 import {
   CreateSnaggingDto,
-  UpdateSnaggingDto,
-  CreateSnaggingMessageDto,
-  UpdateSnaggingMessageDto,
   SnaggingFilters,
   Snagging,
-  SnaggingMessage
+  UpdateOwnerSignatureDto,
 } from '@/lib/types/snagging.types'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
@@ -31,15 +28,13 @@ export const snaggingKeys = {
     [...snaggingKeys.all, 'unit', unitId, filters, isAdmin] as const,
   details: () => [...snaggingKeys.all, 'detail'] as const,
   detail: (id: string) => [...snaggingKeys.details(), id] as const,
-  messages: (snaggingId: string, page?: number) =>
-    [...snaggingKeys.detail(snaggingId), 'messages', { page }] as const,
 }
 
 // =============== Fetcher Functions ===============
 
 const fetchSnaggings = async (key: any[]) => {
   const filters = key[key.length - 1] as SnaggingFilters
-  return snaggingService.getSnaggings(filters)
+  return snaggingService.getAllSnaggings(filters)
 }
 
 const fetchMySnaggings = async (key: any[]) => {
@@ -59,22 +54,16 @@ const fetchSnagging = async (key: any[]) => {
   return snaggingService.getSnaggingById(id)
 }
 
-const fetchSnaggingMessages = async (key: any[]) => {
-  const snaggingId = key[2] as string
-  const options = key[key.length - 1] as { page?: number }
-  return snaggingService.getSnaggingMessages(snaggingId, options.page || 1, 20)
-}
-
 // =============== SWR Hooks ===============
 
 /**
  * Hook to fetch snaggings list (admin view)
  */
 export function useSnaggings(filters: SnaggingFilters = {}) {
-  const { userRole } = useAuth()
+  const { isAdmin } = useAuth()
 
   const { data, error, isLoading, mutate } = useSWR(
-    userRole === 'admin' ? snaggingKeys.list(filters) : null,
+    isAdmin ? snaggingKeys.list(filters) : null,
     fetchSnaggings,
     {
       revalidateOnFocus: false,
@@ -94,10 +83,11 @@ export function useSnaggings(filters: SnaggingFilters = {}) {
  * Hook to fetch my snaggings (owner view)
  */
 export function useMySnaggings(filters: SnaggingFilters = {}) {
-  const { userRole } = useAuth()
+  const { user } = useAuth()
+  const isOwner = user?.role === 'OWNER'
 
   const { data, error, isLoading, mutate } = useSWR(
-    userRole === 'owner' ? snaggingKeys.my(filters) : null,
+    isOwner ? snaggingKeys.my(filters) : null,
     fetchMySnaggings,
     {
       revalidateOnFocus: false,
@@ -157,27 +147,6 @@ export function useSnagging(id: string) {
   }
 }
 
-/**
- * Hook to fetch snagging messages with pagination
- */
-export function useSnaggingMessages(snaggingId: string, page = 1, limit = 20) {
-  const { data, error, isLoading, mutate } = useSWR(
-    snaggingId ? snaggingKeys.messages(snaggingId, page) : null,
-    fetchSnaggingMessages,
-    {
-      revalidateOnFocus: false,
-      dedupingInterval: 30000,
-    }
-  )
-
-  return {
-    data,
-    error,
-    isLoading,
-    mutate,
-  }
-}
-
 // =============== SWR Mutations ===============
 
 /**
@@ -203,49 +172,6 @@ export function useCreateSnagging() {
     {
       onError: (error: any) => {
         toast.error(error.response?.data?.error || 'Failed to create snagging')
-      }
-    }
-  )
-
-  return {
-    mutateAsync: trigger,
-    isPending: isMutating,
-  }
-}
-
-/**
- * Hook to update a snagging
- */
-export function useUpdateSnagging() {
-  const { trigger, isMutating } = useSWRMutation(
-    'update-snagging',
-    async (_key, { arg }: { arg: { id: string; data: UpdateSnaggingDto } }) => {
-      const result = await snaggingService.updateSnagging(arg.id, arg.data)
-
-      // Update cache optimistically
-      mutate(
-        snaggingKeys.detail(arg.id),
-        (current: any) => ({ ...current, ...arg.data }),
-        false
-      )
-
-      // Invalidate lists
-      mutate((key: any) => {
-        if (Array.isArray(key) && key[0] === 'snaggings' && key[1] === 'list') {
-          return true
-        }
-        return false
-      })
-
-      // Revalidate detail
-      mutate(snaggingKeys.detail(arg.id))
-
-      toast.success('Snagging updated successfully')
-      return result
-    },
-    {
-      onError: (error: any) => {
-        toast.error('Failed to update snagging')
       }
     }
   )
@@ -289,27 +215,23 @@ export function useDeleteSnagging() {
 }
 
 /**
- * Hook to create a snagging message
+ * Hook to update owner signature
  */
-export function useCreateSnaggingMessage(snaggingId: string) {
-  const { userId, userName } = useAuth()
-
+export function useUpdateOwnerSignature(snaggingId: string) {
   const { trigger, isMutating } = useSWRMutation(
-    ['create-message', snaggingId],
-    async (_key, { arg }: { arg: CreateSnaggingMessageDto }) => {
-      const result = await snaggingService.createSnaggingMessage(snaggingId, arg)
+    ['update-owner-signature', snaggingId],
+    async (_key, { arg }: { arg: UpdateOwnerSignatureDto }) => {
+      const result = await snaggingService.updateOwnerSignature(snaggingId, arg)
 
-      // Invalidate messages cache
-      mutate(snaggingKeys.messages(snaggingId))
-
-      // Update snagging detail (message count)
+      // Revalidate snagging detail
       mutate(snaggingKeys.detail(snaggingId))
 
+      toast.success('Signature updated and PDF regenerated')
       return result
     },
     {
       onError: (error: any) => {
-        toast.error('Failed to send message')
+        toast.error(error.response?.data?.error || 'Failed to update signature')
       }
     }
   )
@@ -321,89 +243,23 @@ export function useCreateSnaggingMessage(snaggingId: string) {
 }
 
 /**
- * Hook to update a snagging message
+ * Hook to regenerate PDF
  */
-export function useUpdateSnaggingMessage(snaggingId: string) {
+export function useRegeneratePdf(snaggingId: string) {
   const { trigger, isMutating } = useSWRMutation(
-    ['update-message', snaggingId],
-    async (_key, { arg }: { arg: { messageId: string; data: UpdateSnaggingMessageDto } }) => {
-      const result = await snaggingService.updateSnaggingMessage(
-        snaggingId,
-        arg.messageId,
-        arg.data
-      )
+    ['regenerate-pdf', snaggingId],
+    async () => {
+      const result = await snaggingService.regeneratePdf(snaggingId)
 
-      // Optimistically update the message
-      mutate(
-        snaggingKeys.messages(snaggingId),
-        (current: any) => {
-          if (current?.data) {
-            return {
-              ...current,
-              data: current.data.map((msg: SnaggingMessage) =>
-                msg.id === arg.messageId
-                  ? { ...msg, bodyText: arg.data.bodyText || msg.bodyText, content: arg.data.bodyText || msg.content, isEdited: true }
-                  : msg
-              ),
-            }
-          }
-          return current
-        },
-        false
-      )
+      // Revalidate snagging detail
+      mutate(snaggingKeys.detail(snaggingId))
 
-      // Revalidate
-      mutate(snaggingKeys.messages(snaggingId))
-
-      toast.success('Message updated')
+      toast.success('PDF regenerated successfully')
       return result
     },
     {
       onError: (error: any) => {
-        toast.error('Failed to update message')
-      }
-    }
-  )
-
-  return {
-    mutateAsync: trigger,
-    isPending: isMutating,
-  }
-}
-
-/**
- * Hook to delete a snagging message
- */
-export function useDeleteSnaggingMessage(snaggingId: string) {
-  const { trigger, isMutating } = useSWRMutation(
-    ['delete-message', snaggingId],
-    async (_key, { arg }: { arg: string }) => {
-      await snaggingService.deleteSnaggingMessage(snaggingId, arg)
-
-      // Optimistically remove the message
-      mutate(
-        snaggingKeys.messages(snaggingId),
-        (current: any) => {
-          if (current?.data) {
-            return {
-              ...current,
-              data: current.data.filter((msg: SnaggingMessage) => msg.id !== arg),
-            }
-          }
-          return current
-        },
-        false
-      )
-
-      // Revalidate
-      mutate(snaggingKeys.messages(snaggingId))
-      mutate(snaggingKeys.detail(snaggingId))
-
-      toast.success('Message deleted')
-    },
-    {
-      onError: (error: any) => {
-        toast.error('Failed to delete message')
+        toast.error(error.response?.data?.error || 'Failed to regenerate PDF')
       }
     }
   )
@@ -431,6 +287,102 @@ export function useUploadFiles() {
     {
       onError: (error: any) => {
         toast.error(error.message || 'Failed to upload files')
+      }
+    }
+  )
+
+  return {
+    mutateAsync: trigger,
+    isPending: isMutating,
+  }
+}
+
+/**
+ * Hook to schedule appointment (owner only)
+ */
+export function useScheduleAppointment(snaggingId: string) {
+  const { trigger, isMutating } = useSWRMutation(
+    ['schedule-appointment', snaggingId],
+    async (_key, { arg }: { arg: { scheduledAt: string; scheduledNote?: string } }) => {
+      const result = await snaggingService.scheduleAppointment(snaggingId, arg)
+
+      // Revalidate snagging detail
+      mutate(snaggingKeys.detail(snaggingId))
+
+      toast.success('Appointment scheduled successfully')
+      return result
+    },
+    {
+      onError: (error: any) => {
+        toast.error(error.response?.data?.error || 'Failed to schedule appointment')
+      }
+    }
+  )
+
+  return {
+    mutateAsync: trigger,
+    isPending: isMutating,
+  }
+}
+
+/**
+ * Hook to send snagging to owner (admin only)
+ */
+export function useSendToOwner(snaggingId: string) {
+  const { trigger, isMutating } = useSWRMutation(
+    ['send-to-owner', snaggingId],
+    async () => {
+      const result = await snaggingService.sendToOwner(snaggingId)
+
+      // Revalidate snagging detail and lists
+      mutate(snaggingKeys.detail(snaggingId))
+      mutate((key: any) => {
+        if (Array.isArray(key) && key[0] === 'snaggings') {
+          return true
+        }
+        return false
+      })
+
+      toast.success('Snagging sent to owner successfully.')
+      return result
+    },
+    {
+      onError: (error: any) => {
+        toast.error(error.response?.data?.error || 'Failed to send snagging')
+      }
+    }
+  )
+
+  return {
+    mutateAsync: trigger,
+    isPending: isMutating,
+  }
+}
+
+/**
+ * Hook to accept snagging (owner only)
+ */
+export function useAcceptSnagging(snaggingId: string) {
+  const { trigger, isMutating} = useSWRMutation(
+    ['accept-snagging', snaggingId],
+    async () => {
+      const result = await snaggingService.acceptSnagging(snaggingId)
+
+      // Revalidate snagging detail and unit list
+      mutate(snaggingKeys.detail(snaggingId))
+      mutate((key: any) => {
+        if (Array.isArray(key) && key[0] === 'snaggings') {
+          return true
+        }
+        return false
+      })
+
+      toast.success('Snagging accepted successfully. PDF has been generated.')
+      return result
+    },
+    {
+      onError: (error: any) => {
+        toast.error(error.response?.data?.error || 'Failed to accept snagging')
       }
     }
   )

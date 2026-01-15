@@ -5,6 +5,7 @@ import { useUnits } from '@/lib/hooks/use-units';
 import { ArrowRight, Building2, DollarSign, FileText, Home, Loader2, MapPin, TrendingUp } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo } from 'react';
+import Image from 'next/image';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
@@ -211,9 +212,11 @@ export function OwnerDashboardPage() {
                 {/* Unit Image */}
                 <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center overflow-hidden">
                   {unit.image ? (
-                    <img
+                    <Image
                       src={unit.image}
                       alt={unit.unitCode}
+                      width={400}
+                      height={192}
                       className="w-full h-full object-cover"
                     />
                   ) : (

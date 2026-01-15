@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Plus, Trash2, GripVertical, Copy, AlertCircle } from 'lucide-react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Plus, Trash2, GripVertical, Copy, AlertCircle, ChevronDown } from 'lucide-react'
 import { HandoverItemStatus } from '@/lib/types/handover.types'
 import { toast } from 'sonner'
 
@@ -312,7 +313,7 @@ export function HandoverItemsBuilder({ items, onChange, disabled, onValidationCh
             )}
           </p>
         </div>
-        <Button onClick={addItem} size="sm" disabled={disabled}>
+        <Button type="button" onClick={addItem} size="sm" disabled={disabled}>
           <Plus className="h-4 w-4 mr-2" />
           Add Item
         </Button>
@@ -343,36 +344,50 @@ export function HandoverItemsBuilder({ items, onChange, disabled, onValidationCh
         </CardHeader>
         <CardContent className="space-y-3">
           {Object.entries(COMMON_ITEMS).map(([category, labels]) => (
-            <div key={category}>
-              <button
-                onClick={() => setExpandedCategory(expandedCategory === category ? null : category)}
-                className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-muted transition-colors"
-              >
-                <span className="text-sm font-medium">{category}</span>
-                <Badge variant="outline" className="text-xs">
-                  {labels.length} items
-                </Badge>
-              </button>
+            <Collapsible
+              key={category}
+              open={expandedCategory === category}
+              onOpenChange={(open) => setExpandedCategory(open ? category : null)}
+            >
+              <CollapsibleTrigger asChild>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="flex items-center justify-between w-full p-2 rounded-lg hover:bg-muted transition-colors h-auto"
+                >
+                  <span className="text-sm font-medium">{category}</span>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs">
+                      {labels.length} items
+                    </Badge>
+                    <ChevronDown
+                      className={`h-4 w-4 transition-transform ${
+                        expandedCategory === category ? 'rotate-180' : ''
+                      }`}
+                    />
+                  </div>
+                </Button>
+              </CollapsibleTrigger>
 
-              {expandedCategory === category && (
-                <div className="mt-2 ml-4 space-y-1">
-                  {labels.map((label) => (
-                    <button
-                      key={label}
-                      onClick={() => addQuickItem(category, label)}
-                      disabled={disabled || items.some(i => i.label === label)}
-                      className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground w-full text-left p-2 rounded hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <Plus className="h-3 w-3" />
-                      {label}
-                      {items.some(i => i.label === label) && (
-                        <Badge variant="secondary" className="ml-auto text-xs">Added</Badge>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+              <CollapsibleContent className="mt-2 ml-4 space-y-1">
+                {labels.map((label) => (
+                  <Button
+                    key={label}
+                    type="button"
+                    variant="ghost"
+                    onClick={() => addQuickItem(category, label)}
+                    disabled={disabled || items.some(i => i.label === label)}
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground w-full justify-start p-2 rounded hover:bg-muted/50 disabled:opacity-50 disabled:cursor-not-allowed h-auto"
+                  >
+                    <Plus className="h-3 w-3" />
+                    {label}
+                    {items.some(i => i.label === label) && (
+                      <Badge variant="secondary" className="ml-auto text-xs">Added</Badge>
+                    )}
+                  </Button>
+                ))}
+              </CollapsibleContent>
+            </Collapsible>
           ))}
         </CardContent>
       </Card>
@@ -404,6 +419,7 @@ export function HandoverItemsBuilder({ items, onChange, disabled, onValidationCh
                     <div className="flex items-start gap-2">
                       <div className="flex flex-col gap-1 mt-1">
                         <Button
+                          type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => moveItem(index, 'up')}
@@ -413,6 +429,7 @@ export function HandoverItemsBuilder({ items, onChange, disabled, onValidationCh
                           ↑
                         </Button>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => moveItem(index, 'down')}
@@ -527,6 +544,7 @@ export function HandoverItemsBuilder({ items, onChange, disabled, onValidationCh
                       {/* Actions */}
                       <div className="flex flex-col gap-1">
                         <Button
+                          type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => duplicateItem(index)}
@@ -536,6 +554,7 @@ export function HandoverItemsBuilder({ items, onChange, disabled, onValidationCh
                           <Copy className="h-4 w-4" />
                         </Button>
                         <Button
+                          type="button"
                           variant="ghost"
                           size="sm"
                           onClick={() => removeItem(index)}

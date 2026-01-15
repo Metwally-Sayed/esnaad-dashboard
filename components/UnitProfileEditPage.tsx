@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Save, X, ChevronLeft, AlertCircle } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
+import { UnitSnaggingWidget } from './snagging/UnitSnaggingWidget';
 
 interface UnitProfileEditPageProps {
   onBack?: () => void;
@@ -320,6 +321,14 @@ export function UnitProfileEditPage({ onBack, onSave, onCancel }: UnitProfileEdi
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Snagging Widget - Show snagging reports for viewing only (owner can't create) */}
+      <div className="mt-8">
+        <UnitSnaggingWidget
+          unitId={formData.unitCode}
+          userRole="OWNER"
+        />
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -265,9 +266,11 @@ export function AttachmentUpload({
                     {/* Preview or Icon */}
                     <div className="flex-shrink-0">
                       {fileData.preview ? (
-                        <img
+                        <Image
                           src={fileData.preview}
                           alt={fileData.file.name}
+                          width={64}
+                          height={64}
                           className="h-16 w-16 object-cover rounded"
                         />
                       ) : (

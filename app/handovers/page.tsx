@@ -137,16 +137,10 @@ export default function HandoversPage() {
 
   // Calculate stats
   const pendingAction = handovers.filter(h =>
-    isAdmin
-      ? h.status === HandoverStatus.OWNER_CONFIRMED || h.status === HandoverStatus.CHANGES_REQUESTED
-      : h.status === HandoverStatus.SENT_TO_OWNER
+    h.status === HandoverStatus.SENT_TO_OWNER
   ).length
-  const confirmed = handovers.filter(h =>
-    isAdmin
-      ? h.status === HandoverStatus.ADMIN_CONFIRMED
-      : h.status === HandoverStatus.OWNER_CONFIRMED
-  ).length
-  const completed = handovers.filter(h => h.status === HandoverStatus.COMPLETED).length
+  const drafts = handovers.filter(h => h.status === HandoverStatus.DRAFT).length
+  const accepted = handovers.filter(h => h.status === HandoverStatus.ACCEPTED).length
 
   return (
     <div className="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
@@ -202,22 +196,22 @@ export default function HandoversPage() {
           <CardHeader className="pb-3">
             <CardDescription className="flex items-center gap-2">
               <Clock className="h-4 w-4" />
-              {isAdmin ? 'Ready to Complete' : 'Confirmed'}
+              Drafts
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{confirmed}</div>
+            <div className="text-2xl font-bold text-gray-600">{drafts}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-3">
             <CardDescription className="flex items-center gap-2">
               <CheckCircle className="h-4 w-4" />
-              Completed
+              Accepted
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{completed}</div>
+            <div className="text-2xl font-bold text-green-600">{accepted}</div>
           </CardContent>
         </Card>
       </div>

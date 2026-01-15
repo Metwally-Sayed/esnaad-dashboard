@@ -1,44 +1,39 @@
 /**
- * Snagging Service
+ * Snagging Service (v2)
  * API calls for snagging management
  */
 
-import api from './axios-config'
+import api, { getTokens } from './axios-config'
 import { ApiResponse } from '@/lib/types/auth.types'
 import {
   Snagging,
-  SnaggingMessage,
   CreateSnaggingDto,
-  UpdateSnaggingDto,
-  CreateSnaggingMessageDto,
-  UpdateSnaggingMessageDto,
+  UpdateOwnerSignatureDto,
   SnaggingFilters,
-  SnaggingListResponse,
-  SnaggingMessagesResponse,
-  PresignedUrlRequest,
-  PresignedUrlResponse,
-  BatchPresignedUrlRequest,
-  BatchPresignedUrlResponse
+  SnaggingListResponse
 } from '@/lib/types/snagging.types'
 
 class SnaggingService {
   // =============== Snagging CRUD ===============
 
   /**
+   * Create a new snagging (admin only)
+   */
+  async createSnagging(data: CreateSnaggingDto): Promise<Snagging> {
+    const response = await api.post<ApiResponse<Snagging>>('/snaggings', data)
+    return response.data.data!
+  }
+
+  /**
    * Get all snaggings (admin only)
    */
-  async getSnaggings(filters: SnaggingFilters = {}): Promise<SnaggingListResponse> {
+  async getAllSnaggings(filters: SnaggingFilters = {}): Promise<SnaggingListResponse> {
     const params = new URLSearchParams()
-
     if (filters.page) params.append('page', filters.page.toString())
     if (filters.limit) params.append('limit', filters.limit.toString())
-    if (filters.search) params.append('search', filters.search)
-    if (filters.status && filters.status !== 'ALL') params.append('status', filters.status)
-    if (filters.priority && filters.priority !== 'ALL') params.append('priority', filters.priority)
     if (filters.unitId) params.append('unitId', filters.unitId)
-    if (filters.createdById) params.append('createdById', filters.createdById)
-    if (filters.sortBy) params.append('sortBy', filters.sortBy)
-    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder)
+    if (filters.ownerId) params.append('ownerId', filters.ownerId)
+    if (filters.search) params.append('search', filters.search)
 
     const response = await api.get<ApiResponse<SnaggingListResponse>>(
       `/snaggings?${params.toString()}`
@@ -47,49 +42,15 @@ class SnaggingService {
   }
 
   /**
-   * Get my snaggings (owner view)
+   * Get owner's snaggings
    */
   async getMySnaggings(filters: SnaggingFilters = {}): Promise<SnaggingListResponse> {
     const params = new URLSearchParams()
-
     if (filters.page) params.append('page', filters.page.toString())
     if (filters.limit) params.append('limit', filters.limit.toString())
-    if (filters.search) params.append('search', filters.search)
-    if (filters.status && filters.status !== 'ALL') params.append('status', filters.status)
-    if (filters.priority && filters.priority !== 'ALL') params.append('priority', filters.priority)
-    if (filters.unitId) params.append('unitId', filters.unitId)
-    if (filters.sortBy) params.append('sortBy', filters.sortBy)
-    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder)
 
     const response = await api.get<ApiResponse<SnaggingListResponse>>(
       `/snaggings/my?${params.toString()}`
-    )
-    return response.data.data!
-  }
-
-  /**
-   * Get snaggings for a specific unit
-   * Uses the /snaggings endpoint for admins (to see all snaggings)
-   * Uses the /my endpoint for owners (to see only their snaggings)
-   */
-  async getUnitSnaggings(unitId: string, filters: SnaggingFilters = {}, isAdmin: boolean = false): Promise<SnaggingListResponse> {
-    const params = new URLSearchParams()
-
-    params.append('unitId', unitId)
-    if (filters.page) params.append('page', filters.page.toString())
-    if (filters.limit) params.append('limit', filters.limit.toString())
-    if (filters.search) params.append('search', filters.search)
-    if (filters.status && filters.status !== 'ALL') params.append('status', filters.status)
-    if (filters.priority && filters.priority !== 'ALL') params.append('priority', filters.priority)
-    if (filters.sortBy) params.append('sortBy', filters.sortBy)
-    if (filters.sortOrder) params.append('sortOrder', filters.sortOrder)
-
-    // Use /snaggings endpoint for admins to see all snaggings
-    // Use /my endpoint for owners to see only their snaggings
-    const endpoint = isAdmin ? '/snaggings' : '/snaggings/my'
-
-    const response = await api.get<ApiResponse<SnaggingListResponse>>(
-      `${endpoint}?${params.toString()}`
     )
     return response.data.data!
   }
@@ -103,173 +64,107 @@ class SnaggingService {
   }
 
   /**
-   * Create a new snagging
+   * Get snaggings for a specific unit
    */
-  async createSnagging(data: CreateSnaggingDto): Promise<Snagging> {
-    const response = await api.post<ApiResponse<Snagging>>('/snaggings', data)
+  async getUnitSnaggings(
+    unitId: string,
+    filters: SnaggingFilters = {},
+    isAdmin: boolean = false
+  ): Promise<SnaggingListResponse> {
+    const params = new URLSearchParams()
+    if (filters.page) params.append('page', filters.page.toString())
+    if (filters.limit) params.append('limit', filters.limit.toString())
+
+    // Use the /unit/:unitId endpoint which handles both admin and owner access
+    const response = await api.get<ApiResponse<SnaggingListResponse>>(
+      `/snaggings/unit/${unitId}?${params.toString()}`
+    )
     return response.data.data!
   }
 
   /**
-   * Update a snagging (uses PATCH as per backend)
+   * Update owner signature
    */
-  async updateSnagging(id: string, data: UpdateSnaggingDto): Promise<Snagging> {
-    const response = await api.patch<ApiResponse<Snagging>>(`/snaggings/${id}`, data)
+  async updateOwnerSignature(id: string, data: UpdateOwnerSignatureDto): Promise<Snagging> {
+    const response = await api.patch<ApiResponse<Snagging>>(
+      `/snaggings/${id}/owner-signature`,
+      data
+    )
     return response.data.data!
   }
 
   /**
-   * Delete a snagging
+   * Regenerate PDF (admin only)
+   */
+  async regeneratePdf(id: string): Promise<Snagging> {
+    const response = await api.post<ApiResponse<Snagging>>(`/snaggings/${id}/regenerate-pdf`)
+    return response.data.data!
+  }
+
+  /**
+   * Delete/Cancel a snagging (admin only)
+   * Note: Snaggings are not actually deleted, they are cancelled for audit purposes
    */
   async deleteSnagging(id: string): Promise<void> {
-    await api.delete(`/snaggings/${id}`)
-  }
-
-  // =============== Messages ===============
-
-  /**
-   * Get messages for a snagging (with pagination)
-   */
-  async getSnaggingMessages(
-    snaggingId: string,
-    page = 1,
-    limit = 20
-  ): Promise<SnaggingMessagesResponse> {
-    const params = new URLSearchParams({
-      page: page.toString(),
-      limit: limit.toString()
-    })
-
-    const response = await api.get<ApiResponse<SnaggingMessagesResponse>>(
-      `/snaggings/${snaggingId}/messages?${params.toString()}`
-    )
-    return response.data.data!
+    await api.post(`/snaggings/${id}/cancel`)
   }
 
   /**
-   * Create a message in a snagging thread
+   * Schedule appointment (owner only)
    */
-  async createSnaggingMessage(
-    snaggingId: string,
-    data: CreateSnaggingMessageDto
-  ): Promise<SnaggingMessage> {
-    const response = await api.post<ApiResponse<SnaggingMessage>>(
-      `/snaggings/${snaggingId}/messages`,
+  async scheduleAppointment(
+    id: string,
+    data: { scheduledAt: string; scheduledNote?: string }
+  ): Promise<Snagging> {
+    const response = await api.post<ApiResponse<Snagging>>(
+      `/snaggings/${id}/schedule`,
       data
     )
     return response.data.data!
   }
 
   /**
-   * Update a message
+   * Send snagging to owner (admin only)
    */
-  async updateSnaggingMessage(
-    snaggingId: string,
-    messageId: string,
-    data: UpdateSnaggingMessageDto
-  ): Promise<SnaggingMessage> {
-    const response = await api.put<ApiResponse<SnaggingMessage>>(
-      `/snaggings/${snaggingId}/messages/${messageId}`,
-      data
+  async sendToOwner(id: string): Promise<Snagging> {
+    const response = await api.post<ApiResponse<Snagging>>(
+      `/snaggings/${id}/send`,
+      {}
     )
     return response.data.data!
   }
 
   /**
-   * Delete a message
+   * Accept snagging and generate PDF (owner only)
    */
-  async deleteSnaggingMessage(snaggingId: string, messageId: string): Promise<void> {
-    await api.delete(`/snaggings/${snaggingId}/messages/${messageId}`)
+  async acceptSnagging(id: string): Promise<Snagging> {
+    const response = await api.post<ApiResponse<Snagging>>(
+      `/snaggings/${id}/accept`,
+      {}
+    )
+    return response.data.data!
   }
 
   // =============== File Uploads ===============
 
   /**
-   * Get presigned URL for single file upload
+   * Upload a single file directly to Cloudinary via backend
+   * @param file File to upload
+   * @param onProgress Progress callback (0-100)
+   * @returns Promise with Cloudinary public URL and public_id
    */
-  async getPresignedUrl(request: PresignedUrlRequest): Promise<PresignedUrlResponse> {
-    // Convert to backend format
-    const backendRequest = {
-      files: [{
-        fileName: request.fileName,
-        mimeType: request.fileType,
-        sizeBytes: request.fileSize
-      }]
-    }
-
-    const response = await api.post<ApiResponse<any>>(
-      '/uploads/r2/presign',
-      backendRequest
-    )
-
-    // Convert response to expected format
-    const uploadData = response.data.data?.uploads?.[0]
-    if (!uploadData) {
-      throw new Error('Failed to get presigned URL')
-    }
-
-    return {
-      uploadUrl: uploadData.presignedUrl || uploadData.uploadUrl,
-      fileUrl: uploadData.publicUrl || uploadData.fileUrl,
-      fields: uploadData.fields || {}
-    }
-  }
-
-  /**
-   * Get presigned URLs for multiple files
-   */
-  async getBatchPresignedUrls(
-    request: BatchPresignedUrlRequest
-  ): Promise<BatchPresignedUrlResponse> {
-    // Convert to backend format
-    const backendRequest = {
-      files: request.files.map(file => ({
-        fileName: file.fileName,
-        mimeType: file.fileType,
-        sizeBytes: file.fileSize
-      }))
-    }
-
-    const response = await api.post<ApiResponse<any>>(
-      '/uploads/r2/presign',
-      backendRequest
-    )
-
-    // Convert response to expected format
-    const uploads = response.data.data?.uploads || []
-    return {
-      urls: uploads.map((upload: any) => ({
-        uploadUrl: upload.presignedUrl || upload.uploadUrl,
-        fileUrl: upload.publicUrl || upload.fileUrl,
-        fields: upload.fields || {}
-      }))
-    }
-  }
-
-  /**
-   * Upload file to R2 using presigned URL
-   */
-  async uploadToR2(
-    presignedUrl: string,
+  async uploadFileDirect(
     file: File,
-    fields?: Record<string, string>,
     onProgress?: (progress: number) => void
-  ): Promise<void> {
+  ): Promise<{ publicUrl: string; publicId: string }> {
     const formData = new FormData()
-
-    // Add any required fields first (for S3/R2 compatibility)
-    if (fields) {
-      Object.entries(fields).forEach(([key, value]) => {
-        formData.append(key, value)
-      })
-    }
-
-    // Add the file last
     formData.append('file', file)
 
-    // Use XMLHttpRequest for progress tracking
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest()
+
+      // Get the base URL from axios config
+      const baseURL = api.defaults.baseURL || ''
 
       xhr.upload.addEventListener('progress', (e) => {
         if (e.lengthComputable && onProgress) {
@@ -280,29 +175,56 @@ class SnaggingService {
 
       xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve()
+          try {
+            const response = JSON.parse(xhr.responseText)
+            if (response.success && response.data?.publicUrl) {
+              resolve({
+                publicUrl: response.data.publicUrl,
+                publicId: response.data.key // Cloudinary public_id
+              })
+            } else {
+              reject(new Error(response.error || 'Upload failed'))
+            }
+          } catch {
+            reject(new Error('Invalid response from server'))
+          }
         } else {
-          reject(new Error(`Upload failed with status ${xhr.status}`))
+          try {
+            const error = JSON.parse(xhr.responseText)
+            reject(new Error(error.error || `Upload failed with status ${xhr.status}`))
+          } catch {
+            reject(new Error(`Upload failed with status ${xhr.status}`))
+          }
         }
       })
 
       xhr.addEventListener('error', () => {
-        reject(new Error('Upload failed'))
+        reject(new Error('Upload failed - network error'))
       })
 
-      xhr.open('POST', presignedUrl)
+      // Updated endpoint: Cloudinary direct upload
+      xhr.open('POST', `${baseURL}/uploads/cloudinary/direct`)
+
+      // Get auth token from cookies
+      const { accessToken } = getTokens()
+      if (accessToken) {
+        xhr.setRequestHeader('Authorization', `Bearer ${accessToken}`)
+      }
+
       xhr.send(formData)
     })
   }
 
   /**
    * Helper: Upload multiple files with progress
+   * @param files Array of files to upload
+   * @param onProgress Progress callback (fileName, progress)
+   * @returns Promise with array of upload results containing publicUrl and publicId
    */
   async uploadFiles(
     files: File[],
     onProgress?: (fileName: string, progress: number) => void
-  ): Promise<string[]> {
-    // Validate files
+  ): Promise<Array<{ publicUrl: string; publicId: string }>> {
     const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
     const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
 
@@ -315,27 +237,22 @@ class SnaggingService {
       }
     }
 
-    // Get presigned URLs
-    const presignedRequests: PresignedUrlRequest[] = files.map(file => ({
-      fileName: file.name,
-      fileType: file.type,
-      fileSize: file.size
-    }))
+    if (files.length > 10) {
+      throw new Error('Maximum 10 images allowed')
+    }
 
-    const { urls } = await this.getBatchPresignedUrls({ files: presignedRequests })
+    // Upload files sequentially to avoid overwhelming the server
+    const uploadResults: Array<{ publicUrl: string; publicId: string }> = []
 
-    // Upload files in parallel
-    const uploadPromises = files.map((file, index) => {
-      const presignedData = urls[index]
-      return this.uploadToR2(
-        presignedData.uploadUrl,
+    for (const file of files) {
+      const result = await this.uploadFileDirect(
         file,
-        presignedData.fields,
         (progress) => onProgress?.(file.name, progress)
-      ).then(() => presignedData.fileUrl)
-    })
+      )
+      uploadResults.push(result)
+    }
 
-    return Promise.all(uploadPromises)
+    return uploadResults
   }
 }
 

@@ -18,12 +18,16 @@ interface UserFilters {
   search?: string
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+  enabled?: boolean // Add enabled flag to conditionally fetch
 }
 
 /**
  * Hook to fetch users list with real API data
  */
 export function useUsers(filters?: UserFilters) {
+  // Check if fetching should be enabled (default to true for backward compatibility)
+  const shouldFetch = filters?.enabled !== false
+
   const queryParams = new URLSearchParams()
   if (filters?.role) queryParams.append('role', filters.role)
   if (filters?.limit) queryParams.append('limit', filters.limit.toString())
@@ -36,7 +40,7 @@ export function useUsers(filters?: UserFilters) {
   const cacheKey = `/api/users${queryString ? `?${queryString}` : ''}`
 
   const { data, error, isLoading } = useSWR(
-    cacheKey,
+    shouldFetch ? cacheKey : null, // Only fetch if enabled
     () => fetchUsers(filters || {}),
     {
       revalidateOnFocus: false,

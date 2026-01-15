@@ -292,6 +292,7 @@ export function AuditLogsFilters({
                   <button
                     onClick={() => onFilterChange({ action: undefined })}
                     className="ml-1 hover:text-destructive"
+                    aria-label="Remove action filter"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -303,6 +304,7 @@ export function AuditLogsFilters({
                   <button
                     onClick={() => onFilterChange({ entityType: undefined })}
                     className="ml-1 hover:text-destructive"
+                    aria-label="Remove entity type filter"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -314,6 +316,7 @@ export function AuditLogsFilters({
                   <button
                     onClick={() => onFilterChange({ startDate: undefined })}
                     className="ml-1 hover:text-destructive"
+                    aria-label="Remove start date filter"
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -325,6 +328,7 @@ export function AuditLogsFilters({
                   <button
                     onClick={() => onFilterChange({ endDate: undefined })}
                     className="ml-1 hover:text-destructive"
+                    aria-label="Remove end date filter"
                   >
                     <X className="h-3 w-3" />
                   </button>

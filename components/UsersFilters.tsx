@@ -89,6 +89,7 @@ export function UsersFilters({ onFilterChange, currentFilters }: UsersFiltersPro
                   onFilterChange({ search: undefined })
                 }}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Clear search"
               >
                 <X className="h-4 w-4" />
               </button>

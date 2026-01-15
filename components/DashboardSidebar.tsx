@@ -1,6 +1,6 @@
 'use client';
 
-import { Building2, LayoutDashboard, Home, Users, Settings, FileText, BarChart3, Briefcase, AlertTriangle, Activity, X, FolderOpen } from 'lucide-react';
+import { Building2, LayoutDashboard, Home, Users, Settings, FileText, BarChart3, Briefcase, AlertTriangle, Activity, X, FolderOpen, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from './ui/button';
@@ -19,9 +19,15 @@ export function DashboardSidebar() {
     { icon: Briefcase, label: 'Projects', href: '/projects' },
     { icon: Home, label: 'Units', href: '/units' },
     { icon: FileText, label: 'Handovers', href: '/handovers' },
-    { icon: AlertTriangle, label: 'Snagging', href: '/snaggings' },
+    // Admin-only: Snagging inspection reports
+    // Owners access snaggings via Unit Profile widget instead
+    { icon: AlertTriangle, label: 'Snaggings', href: '/admin/snaggings' },
+    // Admin-only: Visitor request management
+    { icon: Mail, label: 'Requests', href: '/admin/requests' },
     { icon: FolderOpen, label: 'Documents', href: '/documents' },
+    // Admin-only: User management
     { icon: Users, label: 'Users', href: '/users' },
+    // Admin-only: Audit trail
     { icon: Activity, label: 'Audit Logs', href: '/audit-logs' },
     { icon: Settings, label: 'Settings', href: '/settings' },
   ];

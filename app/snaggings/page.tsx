@@ -2,120 +2,160 @@
 
 import { useState } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { useSnaggings, useMySnaggings } from '@/lib/hooks/use-snagging'
-import { SnaggingFilters as FiltersType } from '@/lib/types/snagging.types'
-import { SnaggingListTable } from '@/components/snagging/SnaggingListTable'
-import { SnaggingFilters } from '@/components/snagging/SnaggingFilters'
-import { SnaggingCreateDialog } from '@/components/snagging/SnaggingCreateDialog'
+import useSWR from 'swr'
+import snaggingService from '@/lib/api/snagging.service'
+import { SnaggingFilters, SnaggingListResponse } from '@/lib/types/snagging.types'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { AlertTriangle, FileText, Image, RefreshCw } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { SnaggingListTable } from '@/components/snagging/SnaggingListTable'
+import { SnaggingFilters as SnaggingFiltersComponent } from '@/components/snagging/SnaggingFilters'
 
 export default function SnaggingsPage() {
   const router = useRouter()
-  const { userRole } = useAuth()
-  const isAdmin = userRole === 'admin'
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [filters, setFilters] = useState<FiltersType>({
+  const { user, isAdmin } = useAuth()
+  const [filters, setFilters] = useState<SnaggingFilters>({
     page: 1,
-    limit: 10,
-    sortBy: 'createdAt',
-    sortOrder: 'desc',
+    limit: 20
   })
 
-  // Use different hooks based on role
-  // Admin sees all snaggings, owner sees only their snaggings
-  const adminData = useSnaggings(filters)
-  const ownerData = useMySnaggings(filters)
+  // Fetch owner's snaggings
+  const { data, isLoading, mutate } = useSWR<SnaggingListResponse>(
+    user?.role === 'OWNER' ? ['/snaggings/my', filters] : null,
+    () => snaggingService.getMySnaggings(filters),
+    {
+      revalidateOnFocus: false
+    }
+  )
 
-  const { data, isLoading, mutate } = isAdmin ? adminData : ownerData
+  // Block all access - owners should use unit profile widget instead
+  // Admins should use /admin/snaggings
+  if (user?.role !== 'ADMIN') {
+    router.push('/dashboard')
+    return null
+  }
 
-  const handleFilterChange = (newFilters: Partial<FiltersType>) => {
-    setFilters((prev) => ({ ...prev, ...newFilters, page: 1 }))
+  // Redirect to admin snaggings page
+  if (isAdmin) {
+    router.push('/admin/snaggings')
+    return null
   }
 
   const handlePageChange = (page: number) => {
-    setFilters((prev) => ({ ...prev, page }))
+    setFilters(prev => ({ ...prev, page }))
   }
 
-  const handleSnaggingCreated = (snaggingId: string) => {
-    // Navigate to the new snagging or refresh the list
-    setShowCreateDialog(false)
-    mutate() // Refresh the list
-    router.push(`/snaggings/${snaggingId}`)
+  const handleFilterChange = (newFilters: Partial<SnaggingFilters>) => {
+    setFilters(prev => ({ ...prev, ...newFilters, page: 1 }))
   }
+
+  // Calculate stats
+  const totalSnaggings = data?.meta?.total || 0
+  const withPdf = data?.data?.filter(s => s.pdfUrl).length || 0
+  const withImages = data?.data?.filter(s => s.items && s.items.some(item => item.images && item.images.length > 0)).length || 0
+
+  const pagination = data?.meta
 
   return (
-    <div className="max-w-[1440px] mx-auto p-8">
+    <div className="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <AlertTriangle className="h-8 w-8 text-primary" />
-            {isAdmin ? 'All Snagging Issues' : 'My Snagging Issues'}
+          <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+            <AlertTriangle className="h-7 w-7 text-primary" />
+            My Snagging Reports
           </h1>
-          <p className="text-muted-foreground mt-2">
-            {isAdmin
-              ? 'Manage and track all snagging items across all units'
-              : 'Track and manage snagging items for your units'}
+          <p className="text-muted-foreground mt-1">
+            View snagging inspection reports for your units
           </p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Report Issue
+        <Button variant="outline" onClick={() => mutate()}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
         </Button>
       </div>
 
-      {/* Filters */}
-      <SnaggingFilters
-        currentFilters={filters}
-        onFilterChange={handleFilterChange}
-        showUnitFilter={false}
-      />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Total Reports</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalSnaggings}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              PDF Available
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">{withPdf}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription className="flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              With Images
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-600">{withImages}</div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Snagging List Table */}
+      {/* Filters */}
       <div className="mb-6">
-        <SnaggingListTable
-          snaggings={data?.data || []}
-          isLoading={isLoading}
-          onDelete={(id) => mutate()}
+        <SnaggingFiltersComponent
+          onFilterChange={handleFilterChange}
+          currentFilters={filters}
         />
       </div>
 
-      {/* Pagination */}
-      {data?.pagination && data.pagination.totalPages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-muted-foreground text-sm">
-            Page {data.pagination.page} of {data.pagination.totalPages}
-          </div>
+      {/* Snaggings Table */}
+      <Card>
+        <CardContent className="p-0">
+          <SnaggingListTable
+            snaggings={data?.data || []}
+            isLoading={isLoading}
+          />
+        </CardContent>
+      </Card>
 
-          <div className="flex items-center gap-2">
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <div className="text-sm text-muted-foreground">
+            Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
+            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
+            {pagination.total} reports
+          </div>
+          <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
-              disabled={data.pagination.page === 1}
-              onClick={() => handlePageChange(data.pagination.page - 1)}
+              disabled={pagination.page === 1}
+              onClick={() => handlePageChange(pagination.page - 1)}
             >
-              <ChevronLeft className="h-4 w-4" />
+              Previous
             </Button>
             <Button
               variant="outline"
               size="sm"
-              disabled={data.pagination.page === data.pagination.totalPages}
-              onClick={() => handlePageChange(data.pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages}
+              onClick={() => handlePageChange(pagination.page + 1)}
             >
-              <ChevronRight className="h-4 w-4" />
+              Next
             </Button>
           </div>
         </div>
       )}
-
-      {/* Create Dialog */}
-      <SnaggingCreateDialog
-        open={showCreateDialog}
-        onOpenChange={setShowCreateDialog}
-        onSuccess={handleSnaggingCreated}
-      />
     </div>
   )
 }

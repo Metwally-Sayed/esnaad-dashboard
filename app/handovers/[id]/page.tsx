@@ -29,7 +29,6 @@ import { useHandover, useHandoverMutations } from '@/lib/hooks/use-handovers'
 import { useAuth } from '@/contexts/AuthContext'
 import { HandoverStatusBadge } from '@/components/handover/HandoverStatusBadge'
 import { MessageThread } from '@/components/handover/MessageThread'
-import { OwnerChecklistDialog } from '@/components/handover/OwnerChecklistDialog'
 import { format } from 'date-fns'
 import {
   getAllowedActions,
@@ -58,15 +57,12 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 
-// Helper function to get progress percentage based on status
+// Helper function to get progress percentage based on status (simplified workflow)
 function getProgressPercentage(status: HandoverStatus): number {
   const statusProgress: Record<HandoverStatus, number> = {
-    [HandoverStatus.DRAFT]: 20,
-    [HandoverStatus.SENT_TO_OWNER]: 40,
-    [HandoverStatus.OWNER_CONFIRMED]: 60,
-    [HandoverStatus.CHANGES_REQUESTED]: 50,
-    [HandoverStatus.ADMIN_CONFIRMED]: 80,
-    [HandoverStatus.COMPLETED]: 100,
+    [HandoverStatus.DRAFT]: 33,
+    [HandoverStatus.SENT_TO_OWNER]: 66,
+    [HandoverStatus.ACCEPTED]: 100,
     [HandoverStatus.CANCELLED]: 0
   }
   return statusProgress[status] || 0
@@ -81,27 +77,15 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
   const { handover, isLoading, error, mutate } = useHandover(id)
   const {
     sendToOwner,
-    ownerConfirm,
-    requestChanges,
-    adminConfirm,
-    completeHandover,
     cancelHandover,
     isLoading: isMutating
   } = useHandoverMutations()
 
-  // Dialog states
+  // Dialog states (simplified workflow)
   const [sendDialog, setSendDialog] = useState(false)
-  const [confirmDialog, setConfirmDialog] = useState(false)
-  const [ownerChecklistDialog, setOwnerChecklistDialog] = useState(false)
-  const [requestChangesDialog, setRequestChangesDialog] = useState(false)
-  const [adminConfirmDialog, setAdminConfirmDialog] = useState(false)
-  const [completeDialog, setCompleteDialog] = useState(false)
   const [cancelDialog, setCancelDialog] = useState(false)
 
   const [sendMessage, setSendMessage] = useState('')
-  const [acknowledgement, setAcknowledgement] = useState('')
-  const [changesMessage, setChangesMessage] = useState('')
-  const [finalNotes, setFinalNotes] = useState('')
   const [cancelReason, setCancelReason] = useState('')
 
   if (isLoading) {
@@ -142,42 +126,14 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
 
   const allowedActions = getAllowedActions(handover, userRole)
   const isEditable = isHandoverEditable(handover.status)
-  const isCompleted = handover.status === HandoverStatus.COMPLETED
+  const isAccepted = handover.status === HandoverStatus.ACCEPTED
   const isCancelled = handover.status === HandoverStatus.CANCELLED
 
-  // Action handlers
+  // Action handlers (simplified workflow)
   const handleSend = async () => {
     await sendToOwner(id, { message: sendMessage })
     setSendDialog(false)
     setSendMessage('')
-    mutate()
-  }
-
-  const handleOwnerConfirm = async (data: { acknowledgement?: string; itemUpdates?: any[] }) => {
-    await ownerConfirm(id, data)
-    setOwnerChecklistDialog(false)
-    setConfirmDialog(false)
-    setAcknowledgement('')
-    mutate()
-  }
-
-  const handleRequestChanges = async () => {
-    await requestChanges(id, { message: changesMessage })
-    setRequestChangesDialog(false)
-    setChangesMessage('')
-    mutate()
-  }
-
-  const handleAdminConfirm = async () => {
-    await adminConfirm(id, { finalNotes })
-    setAdminConfirmDialog(false)
-    setFinalNotes('')
-    mutate()
-  }
-
-  const handleComplete = async () => {
-    await completeHandover(id)
-    setCompleteDialog(false)
     mutate()
   }
 
@@ -516,7 +472,7 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
           )}
 
           {/* Generated PDF Document */}
-          {handover.status === HandoverStatus.COMPLETED && handover.documents && handover.documents.length > 0 && (
+          {handover.status === HandoverStatus.ACCEPTED && handover.pdfUrl && (
             <Card>
               <CardHeader className="bg-green-50 dark:bg-green-950/20 pb-4">
                 <div className="flex items-center gap-3">
@@ -526,59 +482,57 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
                   <div>
                     <CardTitle className="text-base">Handover Agreement (PDF)</CardTitle>
                     <CardDescription className="text-xs mt-0.5">
-                      Generated on {format(new Date(handover.completedAt!), 'PPP')}
+                      Generated on {handover.ownerAcceptedAt ? format(new Date(handover.ownerAcceptedAt), 'PPP') : 'Acceptance'}
                     </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="pt-6">
-                {handover.documents.map((doc) => (
-                  <div key={doc.id} className="space-y-4">
-                    {/* Document Info */}
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="h-12 w-12 bg-red-100 dark:bg-red-900/30 rounded flex items-center justify-center">
-                          <FileText className="h-6 w-6 text-red-600 dark:text-red-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{doc.title || `Handover Agreement v${doc.version}`}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {(doc.sizeBytes / 1024).toFixed(1)} KB • PDF Document
-                          </p>
-                        </div>
+                <div className="space-y-4">
+                  {/* Document Info */}
+                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className="h-12 w-12 bg-red-100 dark:bg-red-900/30 rounded flex items-center justify-center">
+                        <FileText className="h-6 w-6 text-red-600 dark:text-red-400" />
                       </div>
-                      <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Completed
-                      </Badge>
+                      <div>
+                        <p className="font-medium">Handover Agreement</p>
+                        <p className="text-sm text-muted-foreground">
+                          PDF Document • Unit {handover.unit?.unitNumber}
+                        </p>
+                      </div>
                     </div>
-
-                    {/* Actions */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <Button
-                        variant="default"
-                        className="w-full"
-                        onClick={() => window.open(doc.url, '_blank')}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        View PDF
-                      </Button>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => {
-                          const link = document.createElement('a')
-                          link.href = doc.url
-                          link.download = `handover-${handover.unit?.unitNumber || handover.id}.pdf`
-                          link.click()
-                        }}
-                      >
-                        <Download className="h-4 w-4 mr-2" />
-                        Download PDF
-                      </Button>
-                    </div>
+                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Accepted
+                    </Badge>
                   </div>
-                ))}
+
+                  {/* Actions */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <Button
+                      variant="default"
+                      className="w-full"
+                      onClick={() => window.open(handover.pdfUrl, '_blank')}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      View PDF
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => {
+                        const link = document.createElement('a')
+                        link.href = handover.pdfUrl!
+                        link.download = `handover-${handover.unit?.unitNumber || handover.id}.pdf`
+                        link.click()
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download PDF
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
@@ -639,7 +593,7 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
           {/* Messages */}
           <MessageThread
             handoverId={id}
-            disabled={isCancelled || isCompleted}
+            disabled={isCancelled || isAccepted}
           />
         </div>
 
@@ -656,24 +610,20 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
               </div>
             </CardHeader>
             <CardContent className="space-y-2 pt-6">
-              {/* Show message when no actions available for owner */}
-              {!isAdmin && allowedActions.length === 1 && allowedActions[0] === 'view' && (
+              {/* Show message when no actions available */}
+              {allowedActions.length === 1 && allowedActions[0] === 'view' && (
                 <div className="text-center py-6">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                   <p className="text-sm font-medium mb-1">No Actions Available</p>
                   <p className="text-xs text-muted-foreground">
                     {handover.status === HandoverStatus.DRAFT &&
-                      "This handover is still in draft. You'll be able to take action once the admin sends it to you."}
-                    {handover.status === HandoverStatus.OWNER_CONFIRMED &&
-                      "You've confirmed this handover. Waiting for admin confirmation."}
-                    {handover.status === HandoverStatus.ADMIN_CONFIRMED &&
-                      "This handover has been confirmed. Waiting for completion."}
-                    {handover.status === HandoverStatus.COMPLETED &&
-                      "This handover has been completed."}
+                      "This handover is still in draft. Admins can edit or send it to the owner."}
+                    {handover.status === HandoverStatus.SENT_TO_OWNER &&
+                      "Waiting for owner to accept the handover. Owner can accept via their unit page."}
+                    {handover.status === HandoverStatus.ACCEPTED &&
+                      "This handover has been accepted. PDF agreement has been generated."}
                     {handover.status === HandoverStatus.CANCELLED &&
                       "This handover has been cancelled."}
-                    {handover.status === HandoverStatus.CHANGES_REQUESTED &&
-                      "Waiting for admin to address your requested changes."}
                   </p>
                 </div>
               )}
@@ -699,52 +649,6 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
                 </Button>
               )}
 
-              {allowedActions.includes('owner-confirm') && (
-                <Button
-                  className="w-full"
-                  onClick={() => {
-                    if (handover.items && handover.items.length > 0) {
-                      setOwnerChecklistDialog(true)
-                    } else {
-                      setConfirmDialog(true)
-                    }
-                  }}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Confirm Handover
-                </Button>
-              )}
-
-              {allowedActions.includes('request-changes') && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setRequestChangesDialog(true)}
-                >
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Request Changes
-                </Button>
-              )}
-
-              {allowedActions.includes('admin-confirm') && (
-                <Button
-                  className="w-full"
-                  onClick={() => setAdminConfirmDialog(true)}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Admin Confirm
-                </Button>
-              )}
-
-              {allowedActions.includes('complete') && (
-                <Button
-                  className="w-full bg-green-600 hover:bg-green-700"
-                  onClick={() => setCompleteDialog(true)}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Complete & Generate PDF
-                </Button>
-              )}
 
               {allowedActions.includes('cancel') && (
                 <Button
@@ -757,11 +661,11 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
                 </Button>
               )}
 
-              {isCompleted && handover.documentUrl && (
+              {isAccepted && handover.pdfUrl && (
                 <Button
                   variant="outline"
                   className="w-full"
-                  onClick={() => window.open(handover.documentUrl, '_blank')}
+                  onClick={() => window.open(handover.pdfUrl, '_blank')}
                 >
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF Agreement
@@ -770,7 +674,7 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
             </CardContent>
           </Card>
 
-          {/* Status Timeline */}
+          {/* Status Timeline - Simplified Workflow */}
           <Card className="overflow-hidden">
             <CardHeader className="bg-muted/30 pb-4">
               <div className="flex items-center gap-3">
@@ -780,42 +684,126 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
                 <CardTitle className="text-base">Status Timeline</CardTitle>
               </div>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {['DRAFT', 'SENT_TO_OWNER', 'OWNER_CONFIRMED', 'ADMIN_CONFIRMED', 'COMPLETED'].map((status, index) => {
-                  const currentIndex = ['DRAFT', 'SENT_TO_OWNER', 'OWNER_CONFIRMED', 'ADMIN_CONFIRMED', 'COMPLETED'].indexOf(handover.status)
-                  const isPast = index <= currentIndex
-                  const isCurrent = status === handover.status
+            <CardContent className="pt-6">
+              <div className="space-y-6">
+                {/* DRAFT */}
+                <div className="flex items-start gap-3">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    handover.status !== HandoverStatus.CANCELLED ? 'bg-primary text-primary-foreground' : 'bg-muted'
+                  }`}>
+                    <CheckCircle className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <p className={`text-sm font-medium ${handover.status === HandoverStatus.DRAFT ? 'text-primary' : ''}`}>
+                      Draft
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {format(new Date(handover.createdAt), 'PPp')}
+                    </p>
+                  </div>
+                </div>
 
-                  return (
-                    <div key={status} className="flex items-center gap-3">
-                      <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-                        isPast ? 'bg-primary text-primary-foreground' : 'bg-muted'
-                      }`}>
-                        {isPast ? <CheckCircle className="h-4 w-4" /> : index + 1}
+                {/* Connector line */}
+                {handover.status !== HandoverStatus.CANCELLED && (
+                  <div className="ml-5 h-6 border-l-2 border-muted-foreground/30" />
+                )}
+
+                {/* SENT_TO_OWNER */}
+                <div className="flex items-start gap-3">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    [HandoverStatus.SENT_TO_OWNER, HandoverStatus.ACCEPTED].includes(handover.status)
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {[HandoverStatus.SENT_TO_OWNER, HandoverStatus.ACCEPTED].includes(handover.status) ? (
+                      <CheckCircle className="h-5 w-5" />
+                    ) : (
+                      <span className="text-sm font-semibold">2</span>
+                    )}
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <p className={`text-sm font-medium ${handover.status === HandoverStatus.SENT_TO_OWNER ? 'text-primary' : ''}`}>
+                      Sent to Owner
+                    </p>
+                    {handover.sentAt && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {format(new Date(handover.sentAt), 'PPp')}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Connector line */}
+                {[HandoverStatus.SENT_TO_OWNER, HandoverStatus.ACCEPTED].includes(handover.status) && (
+                  <div className="ml-5 h-6 border-l-2 border-muted-foreground/30" />
+                )}
+
+                {/* ACCEPTED */}
+                <div className="flex items-start gap-3">
+                  <div className={`h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 ${
+                    handover.status === HandoverStatus.ACCEPTED
+                      ? 'bg-green-600 text-white'
+                      : 'bg-muted text-muted-foreground'
+                  }`}>
+                    {handover.status === HandoverStatus.ACCEPTED ? (
+                      <CheckCircle className="h-5 w-5" />
+                    ) : (
+                      <span className="text-sm font-semibold">3</span>
+                    )}
+                  </div>
+                  <div className="flex-1 pt-1">
+                    <p className={`text-sm font-medium ${handover.status === HandoverStatus.ACCEPTED ? 'text-green-600' : ''}`}>
+                      Accepted
+                    </p>
+                    {handover.ownerAcceptedAt && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {format(new Date(handover.ownerAcceptedAt), 'PPp')}
+                      </p>
+                    )}
+                    {handover.status === HandoverStatus.ACCEPTED && handover.pdfUrl && (
+                      <p className="text-xs text-green-600 mt-1">
+                        PDF Generated
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Show cancelled status if applicable */}
+                {handover.status === HandoverStatus.CANCELLED && (
+                  <>
+                    <div className="ml-5 h-6 border-l-2 border-red-300" />
+                    <div className="flex items-start gap-3">
+                      <div className="h-10 w-10 rounded-full flex items-center justify-center flex-shrink-0 bg-red-100 text-red-600">
+                        <XCircle className="h-5 w-5" />
                       </div>
-                      <div className="flex-1">
-                        <p className={`text-sm ${isCurrent ? 'font-semibold' : ''}`}>
-                          {status.replace(/_/g, ' ')}
+                      <div className="flex-1 pt-1">
+                        <p className="text-sm font-medium text-red-600">
+                          Cancelled
                         </p>
+                        {handover.cancelledAt && (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {format(new Date(handover.cancelledAt), 'PPp')}
+                          </p>
+                        )}
                       </div>
                     </div>
-                  )
-                })}
+                  </>
+                )}
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
 
-      {/* Action Dialogs */}
+      {/* Action Dialogs - Simplified Workflow */}
       {/* Send to Owner Dialog */}
       <Dialog open={sendDialog} onOpenChange={setSendDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Send Handover to Owner</DialogTitle>
             <DialogDescription>
-              Send this handover to {handover.owner?.name} for review and confirmation.
+              Send this handover to {handover.owner?.name || handover.owner?.email} for acceptance.
+              The owner will be able to accept via their unit page.
             </DialogDescription>
           </DialogHeader>
           <Textarea
@@ -834,115 +822,6 @@ export default function HandoverDetailsPage({ params }: { params: Promise<{ id: 
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Owner Confirm Dialog (when no items to check) */}
-      <Dialog open={confirmDialog} onOpenChange={setConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Handover</DialogTitle>
-            <DialogDescription>
-              Confirm that you have reviewed and accept the handover details.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="Add acknowledgement message (optional)..."
-            value={acknowledgement}
-            onChange={(e) => setAcknowledgement(e.target.value)}
-            rows={4}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setConfirmDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => handleOwnerConfirm({ acknowledgement })} disabled={isMutating}>
-              Confirm Handover
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Owner Checklist Dialog (when items need checking) */}
-      {handover && handover.items && handover.items.length > 0 && (
-        <OwnerChecklistDialog
-          open={ownerChecklistDialog}
-          onOpenChange={setOwnerChecklistDialog}
-          items={handover.items}
-          onConfirm={handleOwnerConfirm}
-          isLoading={isMutating}
-        />
-      )}
-
-      {/* Request Changes Dialog */}
-      <Dialog open={requestChangesDialog} onOpenChange={setRequestChangesDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Request Changes</DialogTitle>
-            <DialogDescription>
-              Describe what changes are needed for the handover.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="Describe the changes needed..."
-            value={changesMessage}
-            onChange={(e) => setChangesMessage(e.target.value)}
-            rows={4}
-            required
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRequestChangesDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleRequestChanges} disabled={!changesMessage || isMutating}>
-              Request Changes
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Admin Confirm Dialog */}
-      <Dialog open={adminConfirmDialog} onOpenChange={setAdminConfirmDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Admin Confirmation</DialogTitle>
-            <DialogDescription>
-              Confirm that the handover is ready to be completed.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea
-            placeholder="Add final notes (optional)..."
-            value={finalNotes}
-            onChange={(e) => setFinalNotes(e.target.value)}
-            rows={4}
-          />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAdminConfirmDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAdminConfirm} disabled={isMutating}>
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Complete Handover Dialog */}
-      <AlertDialog open={completeDialog} onOpenChange={setCompleteDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Complete Handover</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will complete the handover process and generate the final PDF agreement.
-              This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleComplete} disabled={isMutating}>
-              Complete & Generate PDF
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Cancel Handover Dialog */}
       <Dialog open={cancelDialog} onOpenChange={setCancelDialog}>

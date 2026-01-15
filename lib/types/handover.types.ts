@@ -1,11 +1,8 @@
-// Handover Status Enum
+// Handover Status Enum - Simplified workflow
 export enum HandoverStatus {
   DRAFT = 'DRAFT',
   SENT_TO_OWNER = 'SENT_TO_OWNER',
-  OWNER_CONFIRMED = 'OWNER_CONFIRMED',
-  CHANGES_REQUESTED = 'CHANGES_REQUESTED',
-  ADMIN_CONFIRMED = 'ADMIN_CONFIRMED',
-  COMPLETED = 'COMPLETED',
+  ACCEPTED = 'ACCEPTED',
   CANCELLED = 'CANCELLED'
 }
 
@@ -129,22 +126,23 @@ export interface Handover {
   items?: HandoverItem[]
   attachments?: HandoverAttachment[]
   messages?: HandoverMessage[]
-  documents?: Document[]
-  documentUrl?: string
-  documentId?: string
+
+  // Simplified workflow fields
+  pdfUrl?: string
+  pdfPublicId?: string
+  adminSignature?: string
+  ownerSignature?: string
+  sentAt?: string
+  ownerAcceptedAt?: string
 
   // Counts
   _count?: {
     messages: number
-    documents: number
   }
 
   createdAt: string
   updatedAt: string
-  completedAt?: string
   cancelledAt?: string
-  ownerConfirmedAt?: string
-  adminConfirmedAt?: string
   version?: number
 }
 
@@ -261,10 +259,7 @@ export function getStatusLabel(status: HandoverStatus): string {
   const labels: Record<HandoverStatus, string> = {
     [HandoverStatus.DRAFT]: 'Draft',
     [HandoverStatus.SENT_TO_OWNER]: 'Sent to Owner',
-    [HandoverStatus.OWNER_CONFIRMED]: 'Owner Confirmed',
-    [HandoverStatus.CHANGES_REQUESTED]: 'Changes Requested',
-    [HandoverStatus.ADMIN_CONFIRMED]: 'Admin Confirmed',
-    [HandoverStatus.COMPLETED]: 'Completed',
+    [HandoverStatus.ACCEPTED]: 'Accepted',
     [HandoverStatus.CANCELLED]: 'Cancelled'
   }
   return labels[status] || status
@@ -274,10 +269,7 @@ export function getStatusColor(status: HandoverStatus): string {
   const colors: Record<HandoverStatus, string> = {
     [HandoverStatus.DRAFT]: 'bg-gray-100 text-gray-800',
     [HandoverStatus.SENT_TO_OWNER]: 'bg-blue-100 text-blue-800',
-    [HandoverStatus.OWNER_CONFIRMED]: 'bg-purple-100 text-purple-800',
-    [HandoverStatus.CHANGES_REQUESTED]: 'bg-yellow-100 text-yellow-800',
-    [HandoverStatus.ADMIN_CONFIRMED]: 'bg-indigo-100 text-indigo-800',
-    [HandoverStatus.COMPLETED]: 'bg-green-100 text-green-800',
+    [HandoverStatus.ACCEPTED]: 'bg-green-100 text-green-800',
     [HandoverStatus.CANCELLED]: 'bg-red-100 text-red-800'
   }
   return colors[status] || ''
@@ -292,16 +284,12 @@ export function getItemStatusColor(status: HandoverItemStatus): string {
   return colors[status] || ''
 }
 
-// Check if handover is editable
+// Check if handover is editable (only DRAFT in simplified workflow)
 export function isHandoverEditable(status: HandoverStatus): boolean {
-  return [
-    HandoverStatus.DRAFT,
-    HandoverStatus.SENT_TO_OWNER,
-    HandoverStatus.CHANGES_REQUESTED
-  ].includes(status)
+  return status === HandoverStatus.DRAFT
 }
 
-// Check allowed actions per role and status
+// Check allowed actions per role and status (simplified workflow)
 export function getAllowedActions(handover: Handover, role: 'ADMIN' | 'OWNER'): string[] {
   const actions: string[] = ['view']
 
@@ -317,26 +305,17 @@ export function getAllowedActions(handover: Handover, role: 'ADMIN' | 'OWNER'): 
       case HandoverStatus.SENT_TO_OWNER:
         actions.push('cancel')
         break
-      case HandoverStatus.OWNER_CONFIRMED:
-        actions.push('admin-confirm', 'cancel')
-        break
-      case HandoverStatus.CHANGES_REQUESTED:
-        actions.push('send', 'cancel')
-        break
-      case HandoverStatus.ADMIN_CONFIRMED:
-        actions.push('complete')
+      case HandoverStatus.ACCEPTED:
+        // No actions after acceptance - handover is complete
         break
     }
   } else if (role === 'OWNER') {
-    switch (handover.status) {
-      case HandoverStatus.SENT_TO_OWNER:
-        actions.push('owner-confirm', 'request-changes')
-        break
-    }
+    // Owners can only accept when status is SENT_TO_OWNER
+    // Acceptance happens via the UnitHandoverWidget, not the details page
   }
 
-  // Messages allowed for all except completed/cancelled
-  if (![HandoverStatus.COMPLETED, HandoverStatus.CANCELLED].includes(handover.status)) {
+  // Messages allowed for all except accepted/cancelled
+  if (![HandoverStatus.ACCEPTED, HandoverStatus.CANCELLED].includes(handover.status)) {
     actions.push('message')
   }
 

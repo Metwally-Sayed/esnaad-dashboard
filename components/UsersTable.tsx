@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useCallback, memo } from 'react'
 import {
   Table,
   TableBody,
@@ -54,7 +54,7 @@ interface UsersTableProps {
   isDeleting?: boolean
 }
 
-export function UsersTable({
+export const UsersTable = memo(function UsersTable({
   users,
   isLoading,
   onEdit,
@@ -64,20 +64,20 @@ export function UsersTable({
   const router = useRouter()
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null)
 
-  const handleView = (userId: string) => {
+  const handleView = useCallback((userId: string) => {
     router.push(`/users/${userId}`)
-  }
+  }, [router])
 
-  const handleDelete = (userId: string) => {
+  const handleDelete = useCallback((userId: string) => {
     setDeleteUserId(userId)
-  }
+  }, [])
 
-  const confirmDelete = () => {
+  const confirmDelete = useCallback(() => {
     if (deleteUserId && onDelete) {
       onDelete(deleteUserId)
       setDeleteUserId(null)
     }
-  }
+  }, [deleteUserId, onDelete])
 
   const getRoleVariant = (role: string) => {
     switch (role) {
@@ -294,4 +294,4 @@ export function UsersTable({
       </AlertDialog>
     </>
   )
-}
+})
