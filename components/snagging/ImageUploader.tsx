@@ -28,6 +28,8 @@ const ALLOWED_IMAGE_TYPES = [
   "image/png",
   "image/gif",
   "image/webp",
+  "image/heic",
+  "image/heif",
 ];
 
 interface ImageUploaderProps {
@@ -58,7 +60,18 @@ export function ImageUploader({
       const maxSizeBytes = maxSize * 1024 * 1024;
 
       const validateFile = (file: File): string | null => {
-        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        // Check file extension as fallback when MIME type is not reliable (common on mobile)
+        const extension = file.name.split('.').pop()?.toLowerCase() || '';
+        const allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'heic', 'heif'];
+
+        // Accept if MIME type matches OR extension matches OR type starts with 'image/'
+        const isValidType =
+          ALLOWED_IMAGE_TYPES.includes(file.type) ||
+          allowedExtensions.includes(extension) ||
+          file.type.startsWith('image/') ||
+          file.type === ''; // Empty type often happens with camera captures
+
+        if (!isValidType) {
           return `${file.name} is not a supported image type`;
         }
         if (file.size > maxSizeBytes) {
