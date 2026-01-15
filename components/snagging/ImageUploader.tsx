@@ -160,7 +160,9 @@ export function ImageUploader({
           onChange(finalImages);
         } catch (error: unknown) {
           const message =
-            error instanceof Error ? error.message : "Unknown error";
+            error instanceof Error ? error.message : JSON.stringify(error);
+          alert(`Upload FAILED: ${message}`); // DEBUG
+          console.error('Upload error:', error);
           toast.error(`Upload failed: ${message}`);
           // Remove failed uploads - revert to original value
           onChange(value);
