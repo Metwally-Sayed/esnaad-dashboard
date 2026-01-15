@@ -209,7 +209,9 @@ export function ImageUploader({
   };
 
   const handleCameraCapture = () => {
+    alert('Camera button clicked'); // DEBUG
     if (cameraInputRef.current) {
+      cameraInputRef.current.value = ''; // Reset input
       cameraInputRef.current.click();
     }
   };
@@ -280,7 +282,10 @@ export function ImageUploader({
           type="file"
           accept="image/*"
           capture="environment"
-          onChange={(e) => handleFileSelect(e.target.files)}
+          onChange={(e) => {
+            alert(`Camera onChange fired! Files: ${e.target.files?.length || 0}`); // DEBUG
+            handleFileSelect(e.target.files);
+          }}
           className="hidden"
           disabled={disabled}
         />
