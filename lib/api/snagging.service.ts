@@ -202,8 +202,13 @@ class SnaggingService {
         reject(new Error('Upload failed - network error'))
       })
 
+      xhr.addEventListener('timeout', () => {
+        reject(new Error('Upload failed - timeout (file may be too large)'))
+      })
+
       // Updated endpoint: Cloudinary direct upload
       xhr.open('POST', `${baseURL}/uploads/cloudinary/direct`)
+      xhr.timeout = 120000 // 2 minute timeout for large camera photos
 
       // Get auth token from cookies
       const { accessToken } = getTokens()
@@ -226,14 +231,18 @@ class SnaggingService {
     onProgress?: (fileName: string, progress: number) => void
   ): Promise<Array<{ publicUrl: string; publicId: string }>> {
     const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp']
+    const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/heif']
 
     for (const file of files) {
       if (file.size > MAX_FILE_SIZE) {
         throw new Error(`File ${file.name} exceeds 10MB limit`)
       }
-      if (!ALLOWED_TYPES.includes(file.type)) {
-        throw new Error(`File ${file.name} is not a supported image type`)
+      // Allow any image/* type or empty type (common with mobile camera)
+      const isValidType = ALLOWED_TYPES.includes(file.type) ||
+                          file.type.startsWith('image/') ||
+                          file.type === ''
+      if (!isValidType) {
+        throw new Error(`File ${file.name} is not a supported image type (${file.type})`)
       }
     }
 

@@ -59,7 +59,7 @@ export function ImageUploader({
 
       // DEBUG: Show file info
       Array.from(files).forEach((file, i) => {
-        toast.info(`File ${i + 1}: ${file.name} | Type: "${file.type}" | Size: ${(file.size / 1024).toFixed(1)}KB`);
+        alert(`File ${i + 1}: ${file.name} | Type: "${file.type}" | Size: ${(file.size / 1024 / 1024).toFixed(2)}MB`);
       });
 
       const maxSizeBytes = maxSize * 1024 * 1024;
