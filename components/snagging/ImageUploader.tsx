@@ -57,6 +57,11 @@ export function ImageUploader({
     async (files: FileList | null) => {
       if (!files || disabled) return;
 
+      // DEBUG: Show file info
+      Array.from(files).forEach((file, i) => {
+        toast.info(`File ${i + 1}: ${file.name} | Type: "${file.type}" | Size: ${(file.size / 1024).toFixed(1)}KB`);
+      });
+
       const maxSizeBytes = maxSize * 1024 * 1024;
 
       const validateFile = (file: File): string | null => {
@@ -105,6 +110,9 @@ export function ImageUploader({
         errors.forEach((error) => toast.error(error));
       }
 
+      // DEBUG: Show validation result
+      toast.info(`Valid files: ${validFiles.length} / ${filesToAdd.length}`);
+
       if (validFiles.length > 0) {
         // Add new images with files (initially with local file for preview)
         const newImages: ImageWithComment[] = validFiles.map((file, index) => ({
@@ -127,6 +135,12 @@ export function ImageUploader({
               // Progress callback - we skip real-time updates to avoid stale closure issues
             }
           );
+
+          // DEBUG: Show upload result
+          toast.success(`Upload complete! Got ${uploadResults.length} URLs`);
+          uploadResults.forEach((r, i) => {
+            toast.info(`URL ${i + 1}: ${r.publicUrl?.substring(0, 50)}...`);
+          });
 
           // Update images with uploaded URLs and public IDs from Cloudinary
           const finalImages = updatedImages.map((img, idx) => {
