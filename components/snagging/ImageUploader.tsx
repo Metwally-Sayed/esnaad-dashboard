@@ -317,18 +317,24 @@ export function ImageUploader({
                     <div className="relative aspect-video rounded-lg border overflow-hidden bg-muted">
                       {imageSrc ? (
                         <>
-                          <Image
-                            src={imageSrc}
-                            alt={`Image ${index + 1}`}
-                            width={400}
-                            height={225}
-                            className="w-full h-full object-cover"
-                            onLoad={() => {
-                              if (image.file && !image.imageUrl) {
-                                URL.revokeObjectURL(imageSrc);
-                              }
-                            }}
-                          />
+                          {/* Use regular img for blob URLs (local previews), Next Image for uploaded URLs */}
+                          {image.imageUrl ? (
+                            <Image
+                              src={image.imageUrl}
+                              alt={`Image ${index + 1}`}
+                              width={400}
+                              height={225}
+                              className="w-full h-full object-cover"
+                              unoptimized
+                            />
+                          ) : (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={imageSrc}
+                              alt={`Image ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          )}
                           {isUploading && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                               <div className="text-white text-center">
