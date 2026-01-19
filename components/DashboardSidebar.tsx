@@ -1,9 +1,8 @@
 'use client';
 
-import { Building2, LayoutDashboard, Home, Users, Settings, FileText, BarChart3, Briefcase, AlertTriangle, Activity, X, FolderOpen, Mail } from 'lucide-react';
+import { Activity, AlertTriangle, Briefcase, Building2, DollarSign, FileCheck, FileText, FolderOpen, Home, LayoutDashboard, Mail, Settings, Users } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Button } from './ui/button';
 
 interface NavItem {
   icon: React.ComponentType<{ className?: string }>;
@@ -21,12 +20,17 @@ export function DashboardSidebar() {
     { icon: FileText, label: 'Handovers', href: '/handovers' },
     // Admin-only: Snagging inspection reports
     // Owners access snaggings via Unit Profile widget instead
-    { icon: AlertTriangle, label: 'Snaggings', href: '/admin/snaggings' },
+    { icon: AlertTriangle, label: 'Snaggings', href: '/snaggings' },
+   
     // Admin-only: Visitor request management
-    { icon: Mail, label: 'Requests', href: '/admin/requests' },
+    { icon: Mail, label: 'Delivered Requests', href: '/requests' },
+     // Admin-only: Service charge management
+    { icon: DollarSign, label: 'Service Charges', href: '/service-charge' },
     { icon: FolderOpen, label: 'Documents', href: '/documents' },
     // Admin-only: User management
     { icon: Users, label: 'Users', href: '/users' },
+    // Admin-only: Owner verification management
+    { icon: FileCheck, label: 'Owner Verification', href: '/owner-verification' },
     // Admin-only: Audit trail
     { icon: Activity, label: 'Audit Logs', href: '/audit-logs' },
     { icon: Settings, label: 'Settings', href: '/settings' },

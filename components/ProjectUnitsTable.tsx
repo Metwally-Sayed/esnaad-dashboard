@@ -184,68 +184,69 @@ export function ProjectUnitsTable({
             description={filters?.search ? 'No units match your search criteria' : 'This project has no units yet'}
           />
         ) : (
-          <div className="rounded-lg border border-border bg-card">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Unit Number</TableHead>
-                  <TableHead>Building</TableHead>
-                  <TableHead>Floor</TableHead>
-                  <TableHead>Area</TableHead>
-                  <TableHead>Bedrooms</TableHead>
-                  <TableHead>Owner</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {units.map((unit) => {
-                  return (
-                    <TableRow key={unit.id}>
-                      <TableCell>
-                        <div className="font-medium">{unit.unitNumber}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="text-muted-foreground">
-                          {unit.buildingName || '-'}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {unit.floor ? `Floor ${unit.floor}` : '-'}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Maximize className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-sm">{formatArea(unit.area)}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {unit.bedrooms && (
-                            <div className="flex items-center gap-1">
-                              <Bed className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{unit.bedrooms}</span>
-                            </div>
-                          )}
-                          {unit.bathrooms && (
-                            <div className="flex items-center gap-1">
-                              <Bath className="h-3 w-3 text-muted-foreground" />
-                              <span className="text-sm">{unit.bathrooms}</span>
-                            </div>
-                          )}
-                          {!unit.bedrooms && !unit.bathrooms && '-'}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {unit.owner ? (
-                          <div className="flex items-center gap-1">
-                            <User className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm">{unit.owner.name || unit.owner.email}</span>
+          <div className="rounded-lg border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[100px]">Unit Number</TableHead>
+                    <TableHead className="hidden md:table-cell min-w-[100px]">Building</TableHead>
+                    <TableHead className="hidden sm:table-cell min-w-[80px]">Floor</TableHead>
+                    <TableHead className="hidden md:table-cell min-w-[80px]">Area</TableHead>
+                    <TableHead className="hidden lg:table-cell min-w-[100px]">Bedrooms</TableHead>
+                    <TableHead className="min-w-[120px]">Owner</TableHead>
+                    <TableHead className="text-right min-w-[80px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {units.map((unit) => {
+                    return (
+                      <TableRow key={unit.id}>
+                        <TableCell>
+                          <div className="font-medium">{unit.unitNumber}</div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="text-muted-foreground">
+                            {unit.buildingName || '-'}
                           </div>
-                        ) : (
-                          <span className="text-muted-foreground">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {unit.floor ? `Floor ${unit.floor}` : '-'}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          <div className="flex items-center gap-1">
+                            <Maximize className="h-3 w-3 text-muted-foreground" />
+                            <span className="text-sm">{formatArea(unit.area)}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell">
+                          <div className="flex items-center gap-2">
+                            {unit.bedrooms && (
+                              <div className="flex items-center gap-1">
+                                <Bed className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-sm">{unit.bedrooms}</span>
+                              </div>
+                            )}
+                            {unit.bathrooms && (
+                              <div className="flex items-center gap-1">
+                                <Bath className="h-3 w-3 text-muted-foreground" />
+                                <span className="text-sm">{unit.bathrooms}</span>
+                              </div>
+                            )}
+                            {!unit.bedrooms && !unit.bathrooms && '-'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {unit.owner ? (
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-sm">{unit.owner.name || unit.owner.email}</span>
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
                         <div className="flex items-center justify-end">
                           {onEdit || onDelete ? (
                             <DropdownMenu>
@@ -297,12 +298,13 @@ export function ProjectUnitsTable({
                             </Button>
                           )}
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  )
-                })}
-              </TableBody>
-            </Table>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         )}
       </div>

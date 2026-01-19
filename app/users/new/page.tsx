@@ -1,27 +1,11 @@
-'use client';
+import { Metadata } from 'next'
+import { UserCreateWrapper } from './_components/UserCreateWrapper'
 
-import { OwnerCreatePage } from "@/components/OwnerCreatePage";
-import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+export const metadata: Metadata = {
+  title: 'Create User | Esnaad Dashboard',
+  description: 'Create a new property owner',
+}
 
-export default function NewUser() {
-  const router = useRouter();
-  const { userRole } = useAuth();
-
-  // Redirect non-admin users to users page
-  useEffect(() => {
-    if (userRole !== 'admin') {
-      router.push('/users');
-    }
-  }, [userRole, router]);
-
-  // Only render for admin users
-  if (userRole !== 'admin') {
-    return null;
-  }
-
-  // The OwnerCreatePage component now handles all the logic internally
-  // including API calls and navigation
-  return <OwnerCreatePage />;
+export default function UserCreatePage() {
+  return <UserCreateWrapper />
 }

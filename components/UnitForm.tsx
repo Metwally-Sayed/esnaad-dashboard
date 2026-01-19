@@ -3,7 +3,7 @@
 import { useProjects } from '@/lib/hooks/use-projects';
 import { useUsers } from '@/lib/hooks/use-users';
 import { AlertCircle } from 'lucide-react';
-import { useState } from 'react';
+import { useState, forwardRef, useImperativeHandle } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -26,6 +26,7 @@ export interface UnitFormData {
   bedrooms?: string;
   bathrooms?: string;
   amenities?: string;
+  price?: string; // Unit price for service charge calculation
   createdAt?: string;
   lastUpdated?: string;
 }
@@ -34,6 +35,12 @@ interface UnitFormProps {
   mode: 'create' | 'edit';
   initialData?: UnitFormData;
   onDataChange?: (data: UnitFormData, isValid: boolean) => void;
+  lockProject?: boolean; // Lock project selection (when coming from project page)
+}
+
+export interface UnitFormHandle {
+  validate: () => boolean;
+  getData: () => UnitFormData;
 }
 
 const defaultFormData: UnitFormData = {
@@ -46,9 +53,10 @@ const defaultFormData: UnitFormData = {
   bedrooms: '',
   bathrooms: '',
   amenities: '',
+  price: '',
 };
 
-export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
+export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitForm({ mode, initialData, onDataChange, lockProject }, ref) {
   const [formData, setFormData] = useState<UnitFormData>(initialData || defaultFormData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -82,6 +90,16 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
 
   const isEditMode = mode === 'edit';
   const isCreateMode = mode === 'create';
+
+  // Expose validate and getData methods to parent via ref
+  useImperativeHandle(ref, () => ({
+    validate: () => {
+      return validateFormData(formData);
+    },
+    getData: () => {
+      return formData;
+    },
+  }));
 
   const handleInputChange = (field: keyof UnitFormData, value: string) => {
     console.log(`handleInputChange called: field=${field}, value=${value}`);
@@ -117,10 +135,8 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
       newErrors.unitCode = 'Unit code must be at least 2 characters';
     }
 
-    // Project validation (required)
-    if (!data.projectId || data.projectId === 'none' || data.projectId === '') {
-      newErrors.projectId = 'Project is required';
-    }
+    // Project validation (optional - backend allows units without projects)
+    // No validation required - project is optional
 
     // Address validation
     if (!data.address || !data.address.trim()) {
@@ -149,6 +165,11 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
       newErrors.bathrooms = 'Bathrooms must be a valid number';
     }
 
+    // Price validation (optional but must be valid if provided)
+    if (data.price && (isNaN(Number(data.price)) || Number(data.price) <= 0)) {
+      newErrors.price = 'Price must be a valid positive number';
+    }
+
     console.log('Validation errors:', newErrors);
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -168,6 +189,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
       size: true,
       bedrooms: true,
       bathrooms: true,
+      price: true,
     });
 
     const isValid = validateFormData(dataToUse);
@@ -248,7 +270,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                   </Label>
                   <Input
                     id="unitCode"
-                    value={formData.unitCode}
+                    value={formData.unitCode || ''}
                     onChange={(e) => handleInputChange('unitCode', e.target.value)}
                     onBlur={() => handleBlur('unitCode')}
                     className={`mt-1.5 ${errors.unitCode && touched.unitCode ? 'border-destructive' : ''}`}
@@ -361,6 +383,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                       // Trigger blur for validation
                       handleBlur('projectId');
                     }}
+                    disabled={lockProject}
                   >
                     <SelectTrigger
                       className={`mt-1.5 ${errors.projectId && touched.projectId ? 'border-destructive' : ''} ${hasAuthError ? 'border-yellow-500' : ''}`}
@@ -385,7 +408,15 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                   {errors.projectId && touched.projectId && (
                     <p className="text-sm text-destructive mt-1">{errors.projectId}</p>
                   )}
-                  {!errors.projectId && formData.projectId && formData.projectId !== 'none' && (
+                  {lockProject && formData.projectId && formData.projectId !== 'none' && (
+                    <p className="text-sm text-primary mt-1 flex items-center gap-1">
+                      <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      Project pre-selected from project page
+                    </p>
+                  )}
+                  {!lockProject && !errors.projectId && formData.projectId && formData.projectId !== 'none' && (
                     <p className="text-sm text-muted-foreground mt-1">
                       Unit will be assigned to: {formData.projectName}
                     </p>
@@ -401,7 +432,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                   </Label>
                   <Input
                     id="buildingName"
-                    value={formData.buildingName}
+                    value={formData.buildingName || ''}
                     onChange={(e) => handleInputChange('buildingName', e.target.value)}
                     onBlur={() => handleBlur('buildingName')}
                     className="mt-1.5"
@@ -421,7 +452,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                   </Label>
                   <Textarea
                     id="address"
-                    value={formData.address}
+                    value={formData.address || ''}
                     onChange={(e) => handleInputChange('address', e.target.value)}
                     onBlur={() => handleBlur('address')}
                     className={`mt-1.5 min-h-[80px] ${errors.address && touched.address ? 'border-destructive' : ''}`}
@@ -505,7 +536,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                   </Label>
                   <Input
                     id="floor"
-                    value={formData.floor}
+                    value={formData.floor || ''}
                     onChange={(e) => handleInputChange('floor', e.target.value)}
                     onBlur={() => handleBlur('floor')}
                     className={`mt-1.5 ${errors.floor && touched.floor ? 'border-destructive' : ''}`}
@@ -528,7 +559,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                     type="number"
                     min="0"
                     step="0.01"
-                    value={formData.size}
+                    value={formData.size || ''}
                     onChange={(e) => handleInputChange('size', e.target.value)}
                     onBlur={() => handleBlur('size')}
                     className={`mt-1.5 ${errors.size && touched.size ? 'border-destructive' : ''}`}
@@ -553,7 +584,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                     id="bedrooms"
                     type="number"
                     min="0"
-                    value={formData.bedrooms}
+                    value={formData.bedrooms || ''}
                     onChange={(e) => handleInputChange('bedrooms', e.target.value)}
                     onBlur={() => handleBlur('bedrooms')}
                     className={`mt-1.5 ${errors.bedrooms && touched.bedrooms ? 'border-destructive' : ''}`}
@@ -579,7 +610,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                     type="number"
                     min="0"
                     step="0.5"
-                    value={formData.bathrooms}
+                    value={formData.bathrooms || ''}
                     onChange={(e) => handleInputChange('bathrooms', e.target.value)}
                     onBlur={() => handleBlur('bathrooms')}
                     className={`mt-1.5 ${errors.bathrooms && touched.bathrooms ? 'border-destructive' : ''}`}
@@ -591,6 +622,32 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                   {!errors.bathrooms && (
                     <p className="text-sm text-muted-foreground mt-1">
                       Optional - Can use decimals (e.g., 2.5)
+                    </p>
+                  )}
+                </div>
+
+                <Separator />
+
+                {/* Price */}
+                <div>
+                  <Label htmlFor="price">Unit Price (AED)</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={formData.price || ''}
+                    onChange={(e) => handleInputChange('price', e.target.value)}
+                    onBlur={() => handleBlur('price')}
+                    className={`mt-1.5 ${errors.price && touched.price ? 'border-destructive' : ''}`}
+                    placeholder="e.g., 500000"
+                  />
+                  {errors.price && touched.price && (
+                    <p className="text-sm text-destructive mt-1">{errors.price}</p>
+                  )}
+                  {!errors.price && (
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Optional - Required for service charge calculation
                     </p>
                   )}
                 </div>
@@ -714,7 +771,7 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
                 <Label htmlFor="amenities">Amenities</Label>
                 <Textarea
                   id="amenities"
-                  value={formData.amenities}
+                  value={formData.amenities || ''}
                   onChange={(e) => handleInputChange('amenities', e.target.value)}
                   className="mt-1.5 min-h-[100px]"
                   placeholder="List amenities (e.g., parking, balcony, pool access, gym)"
@@ -767,4 +824,4 @@ export function UnitForm({ mode, initialData, onDataChange }: UnitFormProps) {
       </div>
     </>
   );
-}
+});

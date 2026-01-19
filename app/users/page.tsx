@@ -1,25 +1,11 @@
-'use client';
+import { Metadata } from 'next'
+import { UsersWrapper } from './_components/UsersWrapper'
 
-import { UsersPage } from "@/components/UsersPage";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
-import { useEffect } from "react";
+export const metadata: Metadata = {
+  title: 'Users | Esnaad Dashboard',
+  description: 'Manage system users',
+}
 
-export default function Users() {
-  const router = useRouter();
-  const { userRole } = useAuth();
-
-  // If owner, redirect to their profile page
-  useEffect(() => {
-    if (userRole === 'owner') {
-      router.push('/users/me');
-    }
-  }, [userRole, router]);
-
-  // Only render users page for admins
-  if (userRole !== 'admin') {
-    return null;
-  }
-
-  return <UsersPage />;
+export default function UsersPage() {
+  return <UsersWrapper />
 }

@@ -17,6 +17,7 @@ import {
   VerifyOtpCredentials,
   ResendOtpCredentials,
   Role,
+  OwnerVerificationStatus,
 } from '@/lib/types/auth.types'
 import { fetcher } from './use-swr-config'
 
@@ -67,12 +68,33 @@ export function useAuth() {
           // Update the user state
           await mutateUser({ user: response.data!.user }, false)
 
-          // Redirect based on role
-          if (response.data!.user.role === Role.ADMIN) {
-            router.push('/dashboard')
+          // Determine redirect path based on role and verification status
+          const user = response.data!.user
+          let redirectPath = '/dashboard'
+
+          if (user.role === Role.ADMIN) {
+            redirectPath = '/dashboard'
           } else {
-            router.push('/dashboard')
+            // OWNER - check verification status
+            switch (user.verificationStatus) {
+              case OwnerVerificationStatus.PENDING_DOCUMENTS:
+              case OwnerVerificationStatus.REJECTED:
+                redirectPath = '/verify-documents'
+                break
+              case OwnerVerificationStatus.PENDING_APPROVAL:
+                redirectPath = '/pending-approval'
+                break
+              case OwnerVerificationStatus.APPROVED:
+              case OwnerVerificationStatus.NOT_REQUIRED:
+                redirectPath = '/dashboard'
+                break
+              default:
+                redirectPath = '/dashboard'
+            }
           }
+
+          // Use window.location for hard redirect to ensure cookies are synced
+          window.location.href = redirectPath
         } else {
           throw new Error(response.error?.message || 'Login failed')
         }
@@ -84,7 +106,7 @@ export function useAuth() {
         setLoading(false)
       }
     },
-    [router, mutateUser]
+    [mutateUser]
   )
 
   // Register function
@@ -122,8 +144,33 @@ export function useAuth() {
           // Update the user state
           await mutateUser({ user: response.data!.user }, false)
 
-          // Redirect to dashboard
-          router.push('/dashboard')
+          // Determine redirect path based on role and verification status
+          const user = response.data!.user
+          let redirectPath = '/dashboard'
+
+          if (user.role === Role.ADMIN) {
+            redirectPath = '/dashboard'
+          } else {
+            // OWNER - check verification status
+            switch (user.verificationStatus) {
+              case OwnerVerificationStatus.PENDING_DOCUMENTS:
+              case OwnerVerificationStatus.REJECTED:
+                redirectPath = '/verify-documents'
+                break
+              case OwnerVerificationStatus.PENDING_APPROVAL:
+                redirectPath = '/pending-approval'
+                break
+              case OwnerVerificationStatus.APPROVED:
+              case OwnerVerificationStatus.NOT_REQUIRED:
+                redirectPath = '/dashboard'
+                break
+              default:
+                redirectPath = '/dashboard'
+            }
+          }
+
+          // Use window.location for hard redirect to ensure cookies are synced
+          window.location.href = redirectPath
 
           return response.data
         } else {
@@ -137,7 +184,7 @@ export function useAuth() {
         setLoading(false)
       }
     },
-    [router, mutateUser]
+    [mutateUser]
   )
 
   // Resend OTP function
@@ -176,16 +223,16 @@ export function useAuth() {
       // Clear all SWR cache
       await mutate(() => true, undefined, { revalidate: false })
 
-      // Redirect to login
-      router.push('/login')
+      // Hard redirect to login to clear all state
+      window.location.href = '/login'
     } catch (err: any) {
       // Even if logout fails, clear local state and redirect
       await mutateUser(undefined, false)
-      router.push('/login')
+      window.location.href = '/login'
     } finally {
       setLoading(false)
     }
-  }, [router, mutateUser])
+  }, [mutateUser])
 
   // Refresh user data
   const refreshUser = useCallback(async () => {

@@ -44,6 +44,13 @@ export function ApproveDialog({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // For OWNERSHIP_TRANSFER, TENANT_REGISTRATION, and UNIT_MODIFICATIONS, no expiration needed
+    if (requestType === "OWNERSHIP_TRANSFER" || requestType === "TENANT_REGISTRATION" || requestType === "UNIT_MODIFICATIONS") {
+      await onConfirm({} as ApproveRequestDto);
+      onOpenChange(false);
+      return;
+    }
+
     if (!formData.expiresMode) return;
 
     if (formData.expiresMode === "DATE" && !formData.expiresAt) return;
@@ -68,12 +75,45 @@ export function ApproveDialog({
           <DialogHeader>
             <DialogTitle>Approve Request</DialogTitle>
             <DialogDescription>
-              Set the validity rules for this request. A PDF invitation will be
-              generated and sent to the owner.
+              {requestType === "OWNERSHIP_TRANSFER"
+                ? "Approve this ownership transfer request?"
+                : requestType === "TENANT_REGISTRATION"
+                ? "Approve this tenant registration request?"
+                : requestType === "UNIT_MODIFICATIONS"
+                ? "Approve this unit modifications request?"
+                : "Set the validity rules for this request. A PDF invitation will be generated and sent to the owner."}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          {requestType === "OWNERSHIP_TRANSFER" ? (
+            // Simple confirmation for ownership transfer
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                This will approve the ownership transfer request. The requesting
+                owner will be notified of the approval. No units will be
+                transferred automatically.
+              </p>
+            </div>
+          ) : requestType === "TENANT_REGISTRATION" ? (
+            // Simple confirmation for tenant registration
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                This will approve the tenant registration request. The owner
+                will be notified that their tenant registration has been approved.
+              </p>
+            </div>
+          ) : requestType === "UNIT_MODIFICATIONS" ? (
+            // Simple confirmation for unit modifications
+            <div className="py-4">
+              <p className="text-sm text-muted-foreground">
+                This will approve the unit modifications request. The owner
+                will be notified that their modifications request has been approved
+                and they may proceed with the planned changes.
+              </p>
+            </div>
+          ) : (
+            // Expiration form for other request types
+            <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="expiresMode">Expiry Mode *</Label>
               <Select
@@ -153,6 +193,7 @@ export function ApproveDialog({
               </div>
             )}
           </div>
+          )}
 
           <DialogFooter>
             <Button
@@ -165,7 +206,13 @@ export function ApproveDialog({
             </Button>
             <Button type="submit" disabled={isPending}>
               {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Approve & Generate PDF
+              {requestType === "OWNERSHIP_TRANSFER"
+                ? "Approve Transfer"
+                : requestType === "TENANT_REGISTRATION"
+                ? "Approve Registration"
+                : requestType === "UNIT_MODIFICATIONS"
+                ? "Approve Modifications"
+                : "Approve & Generate PDF"}
             </Button>
           </DialogFooter>
         </form>

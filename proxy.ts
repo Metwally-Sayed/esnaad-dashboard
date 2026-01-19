@@ -11,11 +11,18 @@ const publicRoutes = [
   '/login',
   '/register',
   '/register/verify',
+  '/verify-otp',
   '/forgot-password',
   '/reset-password',
   '/terms',
   '/privacy',
   '/support',
+]
+
+// Owner verification routes (require auth but accessible to unverified owners)
+const verificationRoutes = [
+  '/verify-documents',
+  '/pending-approval',
 ]
 
 // Admin-only routes
@@ -24,6 +31,7 @@ const adminRoutes = [
   '/admin',
   '/settings/admin',
   '/audit-logs',
+  '/owner-verification',
 ]
 
 export function proxy(request: NextRequest) {
@@ -39,43 +47,126 @@ export function proxy(request: NextRequest) {
   // Check if the current route is public
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
 
+  // Check if the current route is a verification route
+  const isVerificationRoute = verificationRoutes.some(route => pathname.startsWith(route))
+
   // Check if the current route is admin-only
   const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route))
 
   // Redirect to login if accessing protected route without auth
-  if (!isPublicRoute && !isAuthenticated) {
+  if (!isPublicRoute && !isVerificationRoute && !isAuthenticated) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     url.searchParams.set('from', pathname)
     return NextResponse.redirect(url)
   }
 
-  // Redirect to dashboard if accessing auth pages while logged in
-  if (isPublicRoute && isAuthenticated && (pathname === '/login' || pathname === '/register')) {
-    const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
-    return NextResponse.redirect(url)
-  }
+  // Decode JWT and check verification status for authenticated users
+  let userRole: string | null = null
+  let verificationStatus: string | null = null
 
-  // For admin routes, we'll need to decode the JWT to check the role
-  // This is a simplified check - in production, you'd want to verify the JWT properly
-  if (isAdminRoute && isAuthenticated) {
+  if (isAuthenticated && accessToken) {
     try {
       // Decode JWT payload (base64)
       const tokenPayload = JSON.parse(
         Buffer.from(accessToken.split('.')[1], 'base64').toString()
       )
+      userRole = tokenPayload.role
+      verificationStatus = tokenPayload.verificationStatus
 
-      if (tokenPayload.role !== 'ADMIN') {
-        // Redirect non-admins to dashboard
-        const url = request.nextUrl.clone()
-        url.pathname = '/dashboard'
-        return NextResponse.redirect(url)
-      }
+      // Debug logging (remove after testing)
+      console.log('[Proxy Debug]', {
+        pathname,
+        userRole,
+        verificationStatus,
+        isVerificationRoute,
+        isPublicRoute,
+      })
     } catch (error) {
-      // If we can't decode the token, redirect to login
+      // If we can't decode the token, it's invalid - redirect to login
       const url = request.nextUrl.clone()
       url.pathname = '/login'
+      return NextResponse.redirect(url)
+    }
+  }
+
+  // OWNER VERIFICATION FLOW - Check verification status before allowing access
+  if (isAuthenticated && userRole === 'OWNER') {
+    const url = request.nextUrl.clone()
+
+    // If owner is APPROVED/NOT_REQUIRED, they should NOT be on verification pages
+    if ((verificationStatus === 'APPROVED' || verificationStatus === 'NOT_REQUIRED') && isVerificationRoute) {
+      url.pathname = '/dashboard'
+      return NextResponse.redirect(url)
+    }
+
+    // If owner is NOT approved, check they're on the right verification page
+    if (!isVerificationRoute && !isPublicRoute) {
+      switch (verificationStatus) {
+        case 'PENDING_DOCUMENTS':
+        case 'REJECTED':
+          // Owner must upload documents
+          if (pathname !== '/verify-documents') {
+            url.pathname = '/verify-documents'
+            return NextResponse.redirect(url)
+          }
+          break
+
+        case 'PENDING_APPROVAL':
+          // Owner is waiting for admin approval
+          if (pathname !== '/pending-approval') {
+            url.pathname = '/pending-approval'
+            return NextResponse.redirect(url)
+          }
+          break
+
+        case 'APPROVED':
+        case 'NOT_REQUIRED':
+          // Owner can access all owner routes
+          break
+
+        default:
+          // Unknown or null status - treat as PENDING_DOCUMENTS only if not already redirecting
+          console.error('[Proxy Error] Unknown verification status:', verificationStatus)
+          if (pathname !== '/verify-documents') {
+            url.pathname = '/verify-documents'
+            return NextResponse.redirect(url)
+          }
+          break
+      }
+    }
+  }
+
+  // Redirect to appropriate page if accessing auth pages while logged in
+  if (isPublicRoute && isAuthenticated && (pathname === '/login' || pathname === '/register')) {
+    const url = request.nextUrl.clone()
+
+    // Check verification status for owners
+    if (userRole === 'OWNER') {
+      switch (verificationStatus) {
+        case 'PENDING_DOCUMENTS':
+        case 'REJECTED':
+          url.pathname = '/verify-documents'
+          break
+        case 'PENDING_APPROVAL':
+          url.pathname = '/pending-approval'
+          break
+        default:
+          url.pathname = '/dashboard'
+      }
+    } else {
+      url.pathname = '/dashboard'
+    }
+
+    return NextResponse.redirect(url)
+  }
+
+  // For admin routes, check role
+  if (isAdminRoute && isAuthenticated) {
+    if (userRole !== 'ADMIN') {
+      // Redirect non-admins to dashboard
+      const url = request.nextUrl.clone()
+      url.pathname = '/dashboard'
       return NextResponse.redirect(url)
     }
   }
@@ -84,7 +175,22 @@ export function proxy(request: NextRequest) {
   if (pathname === '/') {
     const url = request.nextUrl.clone()
     if (isAuthenticated) {
-      url.pathname = '/dashboard'
+      // Check verification status for owners
+      if (userRole === 'OWNER') {
+        switch (verificationStatus) {
+          case 'PENDING_DOCUMENTS':
+          case 'REJECTED':
+            url.pathname = '/verify-documents'
+            break
+          case 'PENDING_APPROVAL':
+            url.pathname = '/pending-approval'
+            break
+          default:
+            url.pathname = '/dashboard'
+        }
+      } else {
+        url.pathname = '/dashboard'
+      }
     } else {
       url.pathname = '/login'
     }

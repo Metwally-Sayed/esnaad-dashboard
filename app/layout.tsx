@@ -12,6 +12,7 @@ import { SWRProvider } from "@/components/providers/swr-provider";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -44,9 +45,13 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
                      pathname.startsWith('/forgot-password') ||
                      pathname.startsWith('/reset-password');
 
+  // Check if we're on a verification page (should not show navbar)
+  const isVerificationPage = pathname.startsWith('/verify-documents') ||
+                             pathname.startsWith('/pending-approval');
+
   // During SSR or initial mount, show minimal layout to avoid hydration mismatch
   if (!mounted) {
-    if (isAuthPage) {
+    if (isAuthPage || isVerificationPage) {
       return children;
     }
     // Return a minimal structure that matches what will be rendered
@@ -62,7 +67,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
   }
 
   // Show loading state while checking authentication (only on client after mount)
-  if (!isAuthPage && loading) {
+  if (!isAuthPage && !isVerificationPage && loading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -75,8 +80,8 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   return (
     <div>
-        {isAuthPage ? (
-          // Auth pages: no sidebar/header
+        {isAuthPage || isVerificationPage ? (
+          // Auth pages and verification pages: no sidebar/header
           children
         ) : (
           // Dashboard pages: show sidebar and header based on role
@@ -141,6 +146,7 @@ export default function RootLayout({
             </AuthProvider>
           </SWRProvider>
         </ErrorBoundary>
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

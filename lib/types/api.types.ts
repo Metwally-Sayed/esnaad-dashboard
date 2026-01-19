@@ -23,6 +23,7 @@ export interface Unit {
   description?: string | null
   imageUrls: string[]
   documentUrls: string[]
+  price?: number | null // Unit price for service charge calculation
   ownerId?: string | null
   owner?: UnitOwner | null
   projectId?: string | null
@@ -49,6 +50,7 @@ export interface CreateUnitDto {
   bathrooms?: number
   amenities?: string
   description?: string
+  price?: number // Unit price for service charge calculation
   projectId?: string
   ownerId?: string
 }

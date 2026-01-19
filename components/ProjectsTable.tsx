@@ -138,64 +138,65 @@ export function ProjectsTable({
 
   return (
     <>
-      <div className="rounded-lg border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Project</TableHead>
-              <TableHead>Location</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Units</TableHead>
-              <TableHead>Start Date</TableHead>
-              <TableHead>End Date</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {projects.map((project) => {
-              const status = formatStatus(project.status)
-              // Check both _count.units and units array length
-              const unitCount = project._count?.units || project.units?.length || 0
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[150px]">Project</TableHead>
+                <TableHead className="hidden md:table-cell min-w-[120px]">Location</TableHead>
+                <TableHead className="min-w-[100px]">Status</TableHead>
+                <TableHead className="hidden sm:table-cell min-w-[80px]">Units</TableHead>
+                <TableHead className="hidden md:table-cell min-w-[110px]">Start Date</TableHead>
+                <TableHead className="hidden lg:table-cell min-w-[110px]">End Date</TableHead>
+                <TableHead className="text-right min-w-[80px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {projects.map((project) => {
+                const status = formatStatus(project.status)
+                // Check both _count.units and units array length
+                const unitCount = project._count?.units || project.units?.length || 0
 
-              return (
-                <TableRow key={project.id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{project.name}</div>
-                      {project.description && (
-                        <div className="text-sm text-muted-foreground mt-1 line-clamp-1">
-                          {project.description}
-                        </div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <MapPin className="h-3 w-3" />
-                      <span className="text-sm">{project.location || '-'}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={status.className}>
-                      {status.label}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      <Home className="h-4 w-4 text-muted-foreground" />
-                      <span>{unitCount}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      <span className="text-sm">{formatDate(project.startDate)}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-muted-foreground">
-                    <span className="text-sm">{formatDate(project.endDate)}</span>
-                  </TableCell>
-                  <TableCell>
+                return (
+                  <TableRow key={project.id}>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{project.name}</div>
+                        {project.description && (
+                          <div className="text-sm text-muted-foreground mt-1 line-clamp-1">
+                            {project.description}
+                          </div>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <MapPin className="h-3 w-3" />
+                        <span className="text-sm">{project.location || '-'}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={status.className}>
+                        {status.label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <div className="flex items-center gap-1">
+                        <Home className="h-4 w-4 text-muted-foreground" />
+                        <span>{unitCount}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <Calendar className="h-3 w-3" />
+                        <span className="text-sm">{formatDate(project.startDate)}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell text-muted-foreground">
+                      <span className="text-sm">{formatDate(project.endDate)}</span>
+                    </TableCell>
+                    <TableCell>
                     <div className="flex items-center justify-end">
                       {onEdit || onDelete ? (
                         <DropdownMenu>
@@ -251,8 +252,9 @@ export function ProjectsTable({
                 </TableRow>
               )
             })}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}

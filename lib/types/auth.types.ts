@@ -14,6 +14,14 @@ export enum OtpPurpose {
   EMAIL_VERIFICATION = 'EMAIL_VERIFICATION'
 }
 
+export enum OwnerVerificationStatus {
+  NOT_REQUIRED = 'NOT_REQUIRED',
+  PENDING_DOCUMENTS = 'PENDING_DOCUMENTS',
+  PENDING_APPROVAL = 'PENDING_APPROVAL',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED'
+}
+
 export interface User {
   id: string
   email: string
@@ -21,6 +29,7 @@ export interface User {
   role: Role
   emailVerified: boolean
   isActive?: boolean
+  verificationStatus?: OwnerVerificationStatus
   createdAt?: string
   updatedAt?: string
 }

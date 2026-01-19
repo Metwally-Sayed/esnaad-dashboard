@@ -44,6 +44,7 @@ export interface DocumentFilters {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
   unitId?: string
+  uploadedByUserId?: string
   category?: DocumentCategory
   search?: string
 }

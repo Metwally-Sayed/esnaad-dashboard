@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/select'
 import { Search, Filter, X, SortAsc, SortDesc } from 'lucide-react'
 import { DocumentFilters as DocumentFiltersType, DocumentCategory } from '@/lib/types/unit-documents.types'
+import { useUnits } from '@/lib/hooks/use-units'
+import { useUsers } from '@/lib/hooks/use-users'
 
 interface DocumentFiltersProps {
   onFilterChange: (filters: Partial<DocumentFiltersType>) => void
@@ -33,6 +35,10 @@ export function DocumentFilters({
   const [searchTerm, setSearchTerm] = useState(currentFilters.search || '')
   const [isExpanded, setIsExpanded] = useState(false)
 
+  // Fetch units and users for admin filters
+  const { units } = useUnits({ limit: 100 })
+  const { users } = useUsers({ limit: 100 })
+
   const handleSearch = () => {
     onFilterChange({ search: searchTerm })
   }
@@ -46,6 +52,18 @@ export function DocumentFilters({
   const handleCategoryChange = (value: string) => {
     onFilterChange({
       category: value === 'all' ? undefined : (value as DocumentCategory),
+    })
+  }
+
+  const handleUnitChange = (value: string) => {
+    onFilterChange({
+      unitId: value === 'all' ? undefined : value,
+    })
+  }
+
+  const handleUploadedByChange = (value: string) => {
+    onFilterChange({
+      uploadedByUserId: value === 'all' ? undefined : value,
     })
   }
 
@@ -64,12 +82,14 @@ export function DocumentFilters({
     onFilterChange({
       search: undefined,
       category: undefined,
+      unitId: undefined,
+      uploadedByUserId: undefined,
       sortBy: 'createdAt',
       sortOrder: 'desc',
     })
   }
 
-  const hasActiveFilters = currentFilters.search || currentFilters.category
+  const hasActiveFilters = currentFilters.search || currentFilters.category || currentFilters.unitId || currentFilters.uploadedByUserId
 
   return (
     <div className="space-y-4">
@@ -123,7 +143,53 @@ export function DocumentFilters({
 
       {/* Expanded Filters */}
       {isExpanded && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4 border rounded-lg bg-muted/30">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 p-4 border rounded-lg bg-muted/30">
+          {/* Unit Filter (Admin only) */}
+          {showUnitFilter && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Unit</label>
+              <Select
+                value={currentFilters.unitId || 'all'}
+                onValueChange={handleUnitChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Units" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Units</SelectItem>
+                  {units.map((unit) => (
+                    <SelectItem key={unit.id} value={unit.id}>
+                      {unit.unitNumber} {unit.buildingName && `- ${unit.buildingName}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Uploaded By Filter (Admin only) */}
+          {showUnitFilter && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Uploaded By</label>
+              <Select
+                value={currentFilters.uploadedByUserId || 'all'}
+                onValueChange={handleUploadedByChange}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="All Users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  {users.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name || user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Category Filter */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Category</label>

@@ -162,19 +162,20 @@ export const UsersTable = memo(function UsersTable({
 
   return (
     <>
-      <div className="rounded-lg border border-border bg-card">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Units</TableHead>
-              <TableHead>Joined</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[180px]">User</TableHead>
+                <TableHead className="hidden md:table-cell min-w-[180px]">Email</TableHead>
+                <TableHead className="min-w-[80px]">Role</TableHead>
+                <TableHead className="hidden sm:table-cell min-w-[80px]">Status</TableHead>
+                <TableHead className="hidden md:table-cell min-w-[60px]">Units</TableHead>
+                <TableHead className="hidden lg:table-cell min-w-[100px]">Joined</TableHead>
+                <TableHead className="text-right min-w-[80px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id} className="cursor-pointer hover:bg-muted/50">
@@ -196,7 +197,7 @@ export const UsersTable = memo(function UsersTable({
                     </div>
                   </div>
                 </TableCell>
-                <TableCell onClick={() => handleView(user.id)}>
+                <TableCell className="hidden md:table-cell" onClick={() => handleView(user.id)}>
                   <div className="flex items-center gap-1">
                     <Mail className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm">{user.email}</span>
@@ -208,17 +209,17 @@ export const UsersTable = memo(function UsersTable({
                     {user.role}
                   </Badge>
                 </TableCell>
-                <TableCell onClick={() => handleView(user.id)}>
+                <TableCell className="hidden sm:table-cell" onClick={() => handleView(user.id)}>
                   <Badge variant={getStatusVariant(user.isActive)}>
                     {user.isActive ? 'Active' : 'Inactive'}
                   </Badge>
                 </TableCell>
-                <TableCell onClick={() => handleView(user.id)}>
+                <TableCell className="hidden md:table-cell" onClick={() => handleView(user.id)}>
                   <span className="inline-flex items-center justify-center min-w-[24px] h-6 px-2 rounded-md bg-muted text-sm font-medium">
                     {user.unitsCount || user._count?.ownedUnits || 0}
                   </span>
                 </TableCell>
-                <TableCell onClick={() => handleView(user.id)}>
+                <TableCell className="hidden lg:table-cell" onClick={() => handleView(user.id)}>
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     {formatDate(user.createdAt)}
@@ -266,8 +267,9 @@ export const UsersTable = memo(function UsersTable({
                 </TableCell>
               </TableRow>
             ))}
-          </TableBody>
-        </Table>
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       {/* Delete Confirmation Dialog */}

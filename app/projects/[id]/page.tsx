@@ -1,11 +1,16 @@
-'use client'
+import { Metadata } from 'next'
+import { ProjectDetail } from './_components/ProjectDetail'
 
-import { useParams } from 'next/navigation'
-import { ProjectDetailsPage } from '@/components/ProjectDetailsPage'
+export const metadata: Metadata = {
+  title: 'Project Details | Esnaad Dashboard',
+  description: 'View project details, units, and history',
+}
 
-export default function Page() {
-  const params = useParams()
-  const projectId = params.id as string
+interface Props {
+  params: Promise<{ id: string }>
+}
 
-  return <ProjectDetailsPage projectId={projectId} />
+export default async function ProjectDetailPage({ params }: Props) {
+  const { id } = await params
+  return <ProjectDetail projectId={id} />
 }

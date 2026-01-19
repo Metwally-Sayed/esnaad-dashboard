@@ -16,27 +16,26 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
+  CardTitle
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/AuthContext";
 import { Request } from "@/lib/types/request.types";
 import { format } from "date-fns";
 import {
+  Ban,
   Building2,
   Calendar,
   CheckCircle,
+  Clock,
   Download,
   FileText,
-  Loader2,
+  Mail,
   User,
-  XCircle,
-  Clock,
-  Ban,
+  Wrench,
+  XCircle
 } from "lucide-react";
-import { useState } from "react";
+import { RequestMessages } from "./RequestMessages";
 
 interface RequestDetailProps {
   request: Request;
@@ -77,11 +76,18 @@ export function RequestDetail({
 
   // Type badge configuration
   const getTypeBadge = (type: string) => {
-    return type === "GUEST_VISIT" ? (
-      <Badge variant="outline">Guest Visit</Badge>
-    ) : (
-      <Badge variant="outline">Work Permission</Badge>
-    );
+    if (type === "GUEST_VISIT") {
+      return <Badge variant="outline">Guest Visit</Badge>;
+    } else if (type === "WORK_PERMISSION") {
+      return <Badge variant="outline">Work Permission</Badge>;
+    } else if (type === "OWNERSHIP_TRANSFER") {
+      return <Badge variant="outline">Ownership Transfer</Badge>;
+    } else if (type === "TENANT_REGISTRATION") {
+      return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-200">Tenant Registration</Badge>;
+    } else if (type === "UNIT_MODIFICATIONS") {
+      return <Badge variant="outline" className="bg-orange-100 text-orange-800 border-orange-200">Unit Modifications</Badge>;
+    }
+    return <Badge variant="outline">{type}</Badge>;
   };
 
   // Get validity text
@@ -107,7 +113,13 @@ export function RequestDetail({
             <h2 className="text-2xl font-bold">
               {request.type === "GUEST_VISIT"
                 ? "Guest Visit Invitation"
-                : "Work Permission"}
+                : request.type === "WORK_PERMISSION"
+                ? "Work Permission"
+                : request.type === "OWNERSHIP_TRANSFER"
+                ? "Ownership Transfer Request"
+                : request.type === "UNIT_MODIFICATIONS"
+                ? "Unit Modifications Request"
+                : "Tenant Registration Request"}
             </h2>
             {getStatusBadge(request.status)}
             {getTypeBadge(request.type)}
@@ -178,54 +190,86 @@ export function RequestDetail({
 
       {/* Main Content */}
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Unit Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Unit Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <div className="text-sm font-medium text-muted-foreground">
-                Unit Number
-              </div>
-              <div className="font-medium">{request.unit?.unitNumber}</div>
-            </div>
-            {request.unit?.buildingName && (
+        {/* Unit Information - Conditional based on request type */}
+        {request.type === "OWNERSHIP_TRANSFER" ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Units to Transfer
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {request.transferUnitIds && request.transferUnitIds.length > 0 ? (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground mb-2">
+                    {request.transferUnitIds.length} unit(s) selected for transfer
+                  </div>
+                  <div className="space-y-2">
+                    {request.transferUnitIds.map((unitId, index) => (
+                      <div key={unitId} className="p-2 rounded-md bg-muted">
+                        <div className="font-medium">Unit #{index + 1}</div>
+                        <div className="text-sm text-muted-foreground">ID: {unitId}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No units specified for transfer
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" />
+                Unit Information
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               <div>
                 <div className="text-sm font-medium text-muted-foreground">
-                  Building
+                  Unit Number
                 </div>
-                <div>{request.unit.buildingName}</div>
+                <div className="font-medium">{request.unit?.unitNumber}</div>
               </div>
-            )}
-            {request.unit?.floor !== undefined && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground">
-                  Floor
+              {request.unit?.buildingName && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Building
+                  </div>
+                  <div>{request.unit.buildingName}</div>
                 </div>
-                <div>{request.unit.floor}</div>
-              </div>
-            )}
-            {request.unit?.address && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground">
-                  Address
+              )}
+              {request.unit?.floor !== undefined && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Floor
+                  </div>
+                  <div>{request.unit.floor}</div>
                 </div>
-                <div>{request.unit.address}</div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              )}
+              {request.unit?.address && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Address
+                  </div>
+                  <div>{request.unit.address}</div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Owner Information */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <User className="h-4 w-4" />
-              Owner Information
+              {request.type === "OWNERSHIP_TRANSFER" ? "Current Owner" : "Owner Information"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -254,17 +298,85 @@ export function RequestDetail({
           </CardContent>
         </Card>
 
-        {/* Visitor/Company Information */}
+        {/* Visitor/Company/New Owner/Tenant Information - Not for UNIT_MODIFICATIONS */}
+        {request.type !== "UNIT_MODIFICATIONS" && (
         <Card>
           <CardHeader>
-            <CardTitle>
-              {request.type === "GUEST_VISIT"
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              {request.type === "OWNERSHIP_TRANSFER"
+                ? "New Owner"
+                : request.type === "GUEST_VISIT"
                 ? "Visitor Information"
+                : request.type === "TENANT_REGISTRATION"
+                ? "Tenant Information"
                 : "Company Information"}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {request.type === "GUEST_VISIT" ? (
+            {request.type === "OWNERSHIP_TRANSFER" ? (
+              <>
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Name
+                  </div>
+                  <div className="font-medium">{request.newOwnerName || "N/A"}</div>
+                </div>
+                {request.newOwnerEmail && (
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Email
+                    </div>
+                    <div>{request.newOwnerEmail}</div>
+                  </div>
+                )}
+                {request.newOwnerPhone && (
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Phone
+                    </div>
+                    <div>{request.newOwnerPhone}</div>
+                  </div>
+                )}
+                {!request.newOwnerId && (
+                  <div>
+                    <Badge variant="secondary" className="mt-2">
+                      New owner - will be created on approval
+                    </Badge>
+                  </div>
+                )}
+                {request.newOwner && (
+                  <div>
+                    <Badge variant="default" className="mt-2">
+                      Existing owner account
+                    </Badge>
+                  </div>
+                )}
+              </>
+            ) : request.type === "TENANT_REGISTRATION" ? (
+              <>
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Tenant Name
+                  </div>
+                  <div className="font-medium">{request.tenantName || "N/A"}</div>
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Email
+                    </div>
+                    <div>{request.tenantEmail || "N/A"}</div>
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium text-muted-foreground">
+                      Phone
+                    </div>
+                    <div>{request.tenantPhone || "N/A"}</div>
+                  </div>
+                </div>
+              </>
+            ) : request.type === "GUEST_VISIT" ? (
               <>
                 <div>
                   <div className="text-sm font-medium text-muted-foreground">
@@ -299,7 +411,7 @@ export function RequestDetail({
                 )}
               </>
             )}
-            {request.purpose && (
+            {request.purpose && request.type !== "OWNERSHIP_TRANSFER" && request.type !== "TENANT_REGISTRATION" && (
               <div>
                 <div className="text-sm font-medium text-muted-foreground">
                   Purpose
@@ -309,44 +421,189 @@ export function RequestDetail({
             )}
           </CardContent>
         </Card>
+        )}
 
-        {/* Schedule & Validity */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Schedule & Validity
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {request.startAt && (
+        {/* Tenant Documents - Only for TENANT_REGISTRATION */}
+        {request.type === "TENANT_REGISTRATION" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Documents
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">Emirates ID</div>
+                    <div className="text-sm text-muted-foreground">PDF/Image Document</div>
+                  </div>
+                </div>
+                {request.emiratesIdUrl ? (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={request.emiratesIdUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="h-4 w-4 mr-2" />
+                      View
+                    </a>
+                  </Button>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Not uploaded</span>
+                )}
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">Passport</div>
+                    <div className="text-sm text-muted-foreground">PDF/Image Document</div>
+                  </div>
+                </div>
+                {request.passportUrl ? (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={request.passportUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="h-4 w-4 mr-2" />
+                      View
+                    </a>
+                  </Button>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Not uploaded</span>
+                )}
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">Rent Contract</div>
+                    <div className="text-sm text-muted-foreground">PDF Document</div>
+                  </div>
+                </div>
+                {request.rentContractUrl ? (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={request.rentContractUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </a>
+                  </Button>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Not uploaded</span>
+                )}
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <FileText className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <div className="font-medium">Ijary Certificate</div>
+                    <div className="text-sm text-muted-foreground">PDF Document</div>
+                  </div>
+                </div>
+                {request.ijaryUrl ? (
+                  <Button asChild variant="outline" size="sm">
+                    <a href={request.ijaryUrl} target="_blank" rel="noopener noreferrer">
+                      <Download className="h-4 w-4 mr-2" />
+                      Download
+                    </a>
+                  </Button>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Not uploaded</span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Unit Modification Details - Only for UNIT_MODIFICATIONS */}
+        {request.type === "UNIT_MODIFICATIONS" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wrench className="h-4 w-4" />
+                Modification Details
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div>
                 <div className="text-sm font-medium text-muted-foreground">
-                  Start Date
+                  Modification Type
                 </div>
-                <div>{format(new Date(request.startAt), "PPP")}</div>
+                <div className="font-medium">
+                  {request.modificationType === "OTHER"
+                    ? request.modificationTypeOther
+                    : request.modificationType?.replace(/_/g, " ")}
+                </div>
               </div>
-            )}
-            {request.endAt && (
               <div>
                 <div className="text-sm font-medium text-muted-foreground">
-                  End Date
+                  Description
                 </div>
-                <div>{format(new Date(request.endAt), "PPP")}</div>
-              </div>
-            )}
-            {getValidityText() && (
-              <div>
-                <div className="text-sm font-medium text-muted-foreground">
-                  Validity
-                </div>
-                <div className="font-medium text-green-600">
-                  {getValidityText()}
+                <div className="whitespace-pre-wrap bg-muted rounded-md p-3">
+                  {request.modificationMessage || "No description provided"}
                 </div>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <div className="pt-4 border-t">
+                <div className="text-sm font-medium text-muted-foreground mb-3">
+                  Contact Information
+                </div>
+                <div className="grid gap-12 sm:grid-cols-2">
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div>
+                      <div className="text-sm text-muted-foreground">Email</div>
+                      <div>{request.contactEmail || "N/A"}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <div className="text-sm text-muted-foreground">Phone</div>
+                      <div>{request.contactPhone || "N/A"}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Schedule & Validity - Not applicable for ownership transfer, tenant registration, and unit modifications */}
+        {request.type !== "OWNERSHIP_TRANSFER" && request.type !== "TENANT_REGISTRATION" && request.type !== "UNIT_MODIFICATIONS" && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Schedule & Validity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {request.startAt && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Start Date
+                  </div>
+                  <div>{format(new Date(request.startAt), "PPP")}</div>
+                </div>
+              )}
+              {request.endAt && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    End Date
+                  </div>
+                  <div>{format(new Date(request.endAt), "PPP")}</div>
+                </div>
+              )}
+              {getValidityText() && (
+                <div>
+                  <div className="text-sm font-medium text-muted-foreground">
+                    Validity
+                  </div>
+                  <div className="font-medium text-green-600">
+                    {getValidityText()}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       {/* Approval/Rejection Info */}
@@ -430,6 +687,14 @@ export function RequestDetail({
           </div>
         </CardContent>
       </Card>
+
+      {/* Messages - Only for UNIT_MODIFICATIONS */}
+      {request.type === "UNIT_MODIFICATIONS" && (
+        <RequestMessages
+          requestId={request.id}
+          disabled={request.status === "CANCELLED" || request.status === "REJECTED"}
+        />
+      )}
     </div>
   );
 }

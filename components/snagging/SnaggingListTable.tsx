@@ -41,9 +41,14 @@ import {
   Image,
   Download,
   CheckCircle,
+  Building2,
+  ClipboardList,
+  Clock,
+  Send,
+  XCircle,
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { Snagging } from '@/lib/types/snagging.types'
+import { Snagging, SnaggingStatus } from '@/lib/types/snagging.types'
 import { useAuth } from '@/contexts/AuthContext'
 import snaggingService from '@/lib/api/snagging.service'
 import { toast } from 'sonner'
@@ -97,6 +102,35 @@ export function SnaggingListTable({
     }
   }
 
+  const getStatusBadge = (status: SnaggingStatus) => {
+    switch (status) {
+      case 'DRAFT':
+      case 'SENT_TO_OWNER':
+        return (
+          <Badge variant="outline" className="gap-1 text-orange-700 border-orange-300 bg-orange-50">
+            <Clock className="h-3 w-3" />
+            Pending
+          </Badge>
+        )
+      case 'ACCEPTED':
+        return (
+          <Badge variant="outline" className="gap-1 text-green-700 border-green-300 bg-green-50">
+            <CheckCircle className="h-3 w-3" />
+            Completed
+          </Badge>
+        )
+      case 'CANCELLED':
+        return (
+          <Badge variant="outline" className="gap-1 text-red-700 border-red-300 bg-red-50">
+            <XCircle className="h-3 w-3" />
+            Cancelled
+          </Badge>
+        )
+      default:
+        return <Badge variant="secondary">{status}</Badge>
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="rounded-lg border border-border bg-card">
@@ -105,7 +139,10 @@ export function SnaggingListTable({
             <TableRow>
               <TableHead>Title</TableHead>
               <TableHead>Unit</TableHead>
+              <TableHead>Project</TableHead>
               <TableHead>Owner</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Items</TableHead>
               <TableHead>Images</TableHead>
               <TableHead>PDF</TableHead>
               <TableHead>Created</TableHead>
@@ -115,27 +152,16 @@ export function SnaggingListTable({
           <TableBody>
             {[...Array(5)].map((_, index) => (
               <TableRow key={index}>
-                <TableCell>
-                  <Skeleton className="h-4 w-48" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-24" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-32" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-6 w-12" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-6 w-16" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-4 w-28" />
-                </TableCell>
-                <TableCell>
-                  <Skeleton className="h-8 w-20 ml-auto" />
-                </TableCell>
+                <TableCell><Skeleton className="h-4 w-36" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-20" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-12" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-12" /></TableCell>
+                <TableCell><Skeleton className="h-6 w-16" /></TableCell>
+                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                <TableCell><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -156,42 +182,53 @@ export function SnaggingListTable({
 
   return (
     <>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Title</TableHead>
-            <TableHead>Unit</TableHead>
-            <TableHead>Owner</TableHead>
-            <TableHead className="text-center">Images</TableHead>
-            <TableHead>PDF</TableHead>
-            <TableHead>Owner Signature</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
+      <div className="rounded-lg border border-border bg-card overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[180px]">Title</TableHead>
+                <TableHead className="min-w-[100px]">Unit</TableHead>
+                <TableHead className="hidden sm:table-cell min-w-[100px]">Project</TableHead>
+                <TableHead className="hidden md:table-cell min-w-[120px]">Owner</TableHead>
+                <TableHead className="min-w-[100px]">Status</TableHead>
+                <TableHead className="hidden lg:table-cell text-center min-w-[70px]">Items</TableHead>
+                <TableHead className="hidden lg:table-cell text-center min-w-[70px]">Images</TableHead>
+                <TableHead className="hidden lg:table-cell min-w-[80px]">PDF</TableHead>
+                <TableHead className="hidden xl:table-cell min-w-[100px]">Created</TableHead>
+                <TableHead className="text-right min-w-[60px]">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
         <TableBody>
-          {snaggings.map((snagging) => (
+          {snaggings.map((snagging) => {
+            const itemsCount = snagging.items?.length || 0
+            const imagesCount = snagging.items?.reduce((total, item) => total + (item.images?.length || 0), 0) || 0
+
+            return (
             <TableRow
               key={snagging.id}
               className="cursor-pointer hover:bg-muted/50"
               onClick={() => handleView(snagging.id)}
             >
+              {/* Title */}
               <TableCell>
-                <div className="max-w-[250px]">
+                <div className="max-w-[220px]">
                   <p className="font-medium truncate">{snagging.title}</p>
                   {snagging.description && (
-                    <p className="text-sm text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate">
                       {snagging.description}
                     </p>
                   )}
                 </div>
               </TableCell>
+
+              {/* Unit */}
               <TableCell>
-                {snagging.unit && (
+                {snagging.unit ? (
                   <div className="flex items-center gap-2">
-                    <Home className="h-4 w-4 text-muted-foreground" />
+                    <Home className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div>
-                      <p className="font-medium">{snagging.unit.unitNumber}</p>
+                      <p className="font-medium text-sm">{snagging.unit.unitNumber}</p>
                       {snagging.unit.buildingName && (
                         <p className="text-xs text-muted-foreground">
                           {snagging.unit.buildingName}
@@ -199,55 +236,88 @@ export function SnaggingListTable({
                       )}
                     </div>
                   </div>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
                 )}
               </TableCell>
-              <TableCell>
-                {snagging.owner && (
+
+              {/* Project */}
+              <TableCell className="hidden sm:table-cell">
+                {snagging.unit?.project?.name ? (
                   <div className="flex items-center gap-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
+                    <Building2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <p className="text-sm">{snagging.unit.project.name}</p>
+                  </div>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
+              </TableCell>
+
+              {/* Owner */}
+              <TableCell className="hidden md:table-cell">
+                {snagging.owner ? (
+                  <div className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                     <div>
-                      <p className="text-sm">{snagging.owner.name || snagging.owner.email}</p>
+                      <p className="text-sm truncate max-w-[120px]">{snagging.owner.name || snagging.owner.email}</p>
                     </div>
                   </div>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
                 )}
               </TableCell>
-              <TableCell className="text-center">
-                {snagging.items && snagging.items.some(item => item.images && item.images.length > 0) ? (
+
+              {/* Status */}
+              <TableCell>
+                {getStatusBadge(snagging.status)}
+              </TableCell>
+
+              {/* Items Count */}
+              <TableCell className="hidden lg:table-cell text-center">
+                {itemsCount > 0 ? (
                   <Badge variant="secondary" className="gap-1">
-                    <Image className="h-3 w-3" />
-                    {snagging.items.reduce((total, item) => total + (item.images?.length || 0), 0)}
+                    <ClipboardList className="h-3 w-3" />
+                    {itemsCount}
                   </Badge>
                 ) : (
                   <span className="text-muted-foreground">-</span>
                 )}
               </TableCell>
-              <TableCell>
+
+              {/* Images Count */}
+              <TableCell className="hidden lg:table-cell text-center">
+                {imagesCount > 0 ? (
+                  <Badge variant="secondary" className="gap-1">
+                    <Image className="h-3 w-3" />
+                    {imagesCount}
+                  </Badge>
+                ) : (
+                  <span className="text-muted-foreground">-</span>
+                )}
+              </TableCell>
+
+              {/* PDF */}
+              <TableCell className="hidden lg:table-cell">
                 {snagging.pdfUrl ? (
                   <Badge variant="outline" className="gap-1 text-green-700 border-green-300 bg-green-50">
                     <FileText className="h-3 w-3" />
                     Ready
                   </Badge>
                 ) : (
-                  <Badge variant="secondary" className="gap-1">
+                  <Badge variant="secondary" className="gap-1 text-xs">
                     Pending
                   </Badge>
                 )}
               </TableCell>
-              <TableCell>
-                {snagging.status === 'ACCEPTED' ? (
-                  <Badge variant="outline" className="text-xs text-green-700 border-green-300">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Accepted
-                  </Badge>
-                ) : (
-                  <Badge variant="secondary" className="text-xs">Pending</Badge>
-                )}
-              </TableCell>
-              <TableCell>
+
+              {/* Created Date */}
+              <TableCell className="hidden xl:table-cell">
                 <p className="text-sm text-muted-foreground">
                   {formatDate(snagging.createdAt)}
                 </p>
               </TableCell>
+
+              {/* Actions */}
               <TableCell onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -282,9 +352,12 @@ export function SnaggingListTable({
                 </DropdownMenu>
               </TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+            )
+          })}
+          </TableBody>
+        </Table>
+        </div>
+      </div>
 
       {/* Cancel Confirmation Dialog */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>

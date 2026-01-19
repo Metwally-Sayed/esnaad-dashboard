@@ -152,7 +152,20 @@ export function UploadDocumentDialog({
     setUploadProgress(0)
 
     try {
-      // Direct upload to R2 via backend (bypasses presigned URL signature issues)
+      // Log file details before upload
+      console.log('📁 Starting upload for file:', {
+        name: selectedFile.name,
+        size: selectedFile.size,
+        type: selectedFile.type,
+        lastModified: new Date(selectedFile.lastModified).toISOString()
+      })
+
+      // Verify file is readable
+      if (selectedFile.size === 0) {
+        throw new Error('File is empty (0 bytes). Please select a valid PDF file.')
+      }
+
+      // Direct upload to Cloudinary via backend
       const uploadResult = await unitDocumentsService.uploadFileDirect(
         selectedFile,
         (progress) => {
@@ -160,12 +173,15 @@ export function UploadDocumentDialog({
         }
       )
 
+      console.log('📤 Upload complete, result:', uploadResult)
+
       // Call onSuccess with document data
+      // IMPORTANT: Store the full publicUrl as fileKey so we don't need to reconstruct it
       if (onSuccess) {
         onSuccess({
           title: data.title,
           category: data.category,
-          fileKey: uploadResult.key,
+          fileKey: uploadResult.publicUrl, // Store full URL, not just the key
           mimeType: uploadResult.mimeType,
           sizeBytes: uploadResult.sizeBytes,
         })

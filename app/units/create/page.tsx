@@ -1,25 +1,16 @@
-'use client'
+import { Metadata } from 'next'
+import { Suspense } from 'react'
+import { CreateUnitWrapper } from './_components/CreateUnitWrapper'
 
-import { UnitCreatePage } from "@/components/UnitCreatePage"
-import { useAuth } from "@/contexts/AuthContext"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+export const metadata: Metadata = {
+  title: 'Create Unit | Esnaad Dashboard',
+  description: 'Create a new property unit',
+}
 
-export default function CreateUnit() {
-  const router = useRouter()
-  const { isAdmin } = useAuth()
-
-  // Redirect non-admin users to units page
-  useEffect(() => {
-    if (isAdmin === false) {
-      router.push('/units')
-    }
-  }, [isAdmin, router])
-
-  // Only render for admin users
-  if (!isAdmin) {
-    return null
-  }
-
-  return <UnitCreatePage />
+export default function CreateUnitPage() {
+  return (
+    <Suspense fallback={<div className="p-8">Loading...</div>}>
+      <CreateUnitWrapper />
+    </Suspense>
+  )
 }

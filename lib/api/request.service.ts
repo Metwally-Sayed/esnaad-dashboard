@@ -7,7 +7,12 @@ import {
   RequestFilters,
   CreateRequestDto,
   ApproveRequestDto,
-  RejectRequestDto
+  RejectRequestDto,
+  RequestMessage,
+  CreateMessageDto,
+  MessageFilters,
+  MessageListResponse,
+  MessageResponse
 } from '@/lib/types/request.types';
 
 const API_BASE = '/requests';
@@ -138,6 +143,69 @@ export const requestService = {
         error.response?.data?.error ||
         error.response?.data?.message ||
         'Failed to revoke request';
+      toast.error(errorMessage);
+      throw error;
+    }
+  },
+
+  // ==================== MESSAGE METHODS ====================
+
+  // Get messages for a request
+  async getMessages(requestId: string, filters: MessageFilters = {}): Promise<MessageListResponse> {
+    try {
+      const params = new URLSearchParams();
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          params.append(key, String(value));
+        }
+      });
+
+      const response = await axios.get<MessageListResponse>(
+        `${API_BASE}/${requestId}/messages?${params.toString()}`
+      );
+      return response.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to load messages';
+      toast.error(errorMessage);
+      throw error;
+    }
+  },
+
+  // Create a message
+  async createMessage(requestId: string, data: CreateMessageDto): Promise<RequestMessage> {
+    try {
+      const response = await axios.post<MessageResponse>(
+        `${API_BASE}/${requestId}/messages`,
+        data
+      );
+      return response.data.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to send message';
+      toast.error(errorMessage);
+      throw error;
+    }
+  },
+
+  // Delete a message
+  async deleteMessage(requestId: string, messageId: string): Promise<RequestMessage> {
+    try {
+      const response = await axios.delete<MessageResponse>(
+        `${API_BASE}/${requestId}/messages/${messageId}`
+      );
+      toast.success('Message deleted');
+      return response.data.data;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        'Failed to delete message';
       toast.error(errorMessage);
       throw error;
     }

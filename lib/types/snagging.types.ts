@@ -54,6 +54,10 @@ export interface Snagging {
     area?: number | null
     bedrooms?: number | null
     address?: string | null
+    project?: {
+      id: string
+      name: string
+    } | null
   }
   owner?: {
     id: string
@@ -74,7 +78,7 @@ export interface SnaggingImage {
   id: string
   snaggingId: string
   imageUrl: string
-  comment?: string | null
+  caption?: string | null
   sortOrder: number
   createdAt: string
 }
@@ -87,7 +91,7 @@ export interface CreateSnaggingDto {
   description: string
   images: Array<{
     imageUrl: string
-    comment?: string
+    caption?: string
     sortOrder: number
   }>
 }
@@ -138,4 +142,15 @@ export interface BatchPresignedUrlRequest {
 
 export interface BatchPresignedUrlResponse {
   uploads: PresignedUrlResponse[]
+}
+
+// Stats Types (from /api/snaggings/stats)
+export interface SnaggingStats {
+  total: number
+  draft: number
+  sentToOwner: number
+  accepted: number
+  cancelled: number
+  withPdf: number
+  withImages: number
 }

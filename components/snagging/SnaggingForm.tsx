@@ -24,7 +24,7 @@ const createSnaggingSchema = z.object({
   description: z.string().min(1, 'Description is required').max(5000, 'Description must be less than 5000 characters'),
   images: z.array(z.object({
     imageUrl: z.string().url(),
-    comment: z.string().max(1000).optional(),
+    caption: z.string().max(1000).optional(),
     sortOrder: z.number()
   })).min(1, 'At least one image is required').max(10, 'Maximum 10 images allowed')
 })
@@ -76,10 +76,10 @@ export function SnaggingForm({ onSubmit, onCancel, isLoading = false }: Snagging
       .filter(img => img.imageUrl) // Only include uploaded images
       .map((img, index) => ({
         imageUrl: img.imageUrl!,
-        comment: img.comment || '',
+        caption: img.caption || '', // Map caption field correctly
         sortOrder: img.sortOrder
       }))
-    
+
     setValue('images', imageData, { shouldValidate: true })
   }, [images, setValue])
 

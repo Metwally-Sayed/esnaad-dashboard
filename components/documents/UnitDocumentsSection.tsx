@@ -90,7 +90,22 @@ export function UnitDocumentsSection({ unitId, unitNumber }: UnitDocumentsSectio
   }
 
   const handleView = (document: any) => {
-    window.open(document.fileUrl, '_blank')
+    console.log('🔍 [View] Opening document:', {
+      id: document.id,
+      title: document.title,
+      publicUrl: document.publicUrl?.substring(0, 80) + '...',
+      fileKey: document.fileKey?.substring(0, 80) + '...'
+    })
+
+    // Use publicUrl if available (new format), otherwise fallback to fileKey
+    const url = document.publicUrl || document.fileKey
+
+    if (!url) {
+      console.error('❌ [View] No URL available for document:', document.id)
+      return
+    }
+
+    window.open(url, '_blank')
   }
 
   const handleDownload = (document: any) => {
@@ -125,12 +140,10 @@ export function UnitDocumentsSection({ unitId, unitNumber }: UnitDocumentsSectio
               {documents.length} document{documents.length !== 1 ? 's' : ''} uploaded
             </CardDescription>
           </div>
-          {isAdmin && (
-            <Button onClick={() => setIsUploadDialogOpen(true)} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Upload Document
-            </Button>
-          )}
+          <Button onClick={() => setIsUploadDialogOpen(true)} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Upload Document
+          </Button>
         </CardHeader>
 
         <CardContent>
@@ -147,11 +160,7 @@ export function UnitDocumentsSection({ unitId, unitNumber }: UnitDocumentsSectio
             <EmptyState
               icon={FileText}
               title="No documents"
-              description={
-                isAdmin
-                  ? 'Upload documents for this unit using the button above'
-                  : 'No documents have been uploaded for this unit yet'
-              }
+              description="Upload documents for this unit using the button above"
             />
           ) : (
             <div className="rounded-lg border">
@@ -223,15 +232,13 @@ export function UnitDocumentsSection({ unitId, unitNumber }: UnitDocumentsSectio
       </Card>
 
       {/* Upload Dialog */}
-      {isAdmin && (
-        <UploadDocumentDialog
-          open={isUploadDialogOpen}
-          onOpenChange={setIsUploadDialogOpen}
-          unitId={unitId}
-          unitNumber={unitNumber}
-          onSuccess={handleUploadSuccess}
-        />
-      )}
+      <UploadDocumentDialog
+        open={isUploadDialogOpen}
+        onOpenChange={setIsUploadDialogOpen}
+        unitId={unitId}
+        unitNumber={unitNumber}
+        onSuccess={handleUploadSuccess}
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteDocumentId} onOpenChange={() => setDeleteDocumentId(null)}>

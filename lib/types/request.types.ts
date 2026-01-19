@@ -1,7 +1,8 @@
 // Request types
-export type RequestType = 'GUEST_VISIT' | 'WORK_PERMISSION';
+export type RequestType = 'GUEST_VISIT' | 'WORK_PERMISSION' | 'OWNERSHIP_TRANSFER' | 'TENANT_REGISTRATION' | 'UNIT_MODIFICATIONS';
 export type RequestStatus = 'SUBMITTED' | 'APPROVED' | 'REJECTED' | 'EXPIRED' | 'CANCELLED';
 export type ExpiresMode = 'DATE' | 'USES' | 'UNLIMITED';
+export type ModificationType = 'RENOVATION' | 'REPAIR' | 'ADDITION' | 'REMOVAL' | 'ELECTRICAL' | 'PLUMBING' | 'HVAC' | 'STRUCTURAL' | 'COSMETIC' | 'OTHER';
 
 // Base request interface
 export interface Request {
@@ -17,6 +18,30 @@ export interface Request {
   visitorPhone?: string;
   companyName?: string;
   representativeName?: string;
+
+  // Ownership Transfer info
+  transferUnitIds?: string[];
+  newOwnerId?: string;
+  newOwnerName?: string;
+  newOwnerEmail?: string;
+  newOwnerPhone?: string;
+  message?: string;
+
+  // Tenant Registration info
+  tenantName?: string;
+  tenantEmail?: string;
+  tenantPhone?: string;
+  emiratesIdUrl?: string;
+  passportUrl?: string;
+  rentContractUrl?: string;
+  ijaryUrl?: string;
+
+  // Unit Modifications info
+  modificationType?: ModificationType;
+  modificationTypeOther?: string;
+  modificationMessage?: string;
+  contactEmail?: string;
+  contactPhone?: string;
 
   // Schedule
   startAt?: string;
@@ -65,6 +90,12 @@ export interface Request {
     phone?: string;
     address?: string;
   };
+  newOwner?: {
+    id: string;
+    name?: string;
+    email: string;
+    phone?: string;
+  };
   approvedByAdmin?: {
     id: string;
     name?: string;
@@ -79,13 +110,33 @@ export interface Request {
 
 // DTOs
 export interface CreateRequestDto {
-  unitId: string;
+  unitId?: string;
   type: RequestType;
   purpose?: string;
   visitorName?: string;
   visitorPhone?: string;
   companyName?: string;
   representativeName?: string;
+  transferUnitIds?: string[];
+  newOwnerId?: string;
+  newOwnerName?: string;
+  newOwnerEmail?: string;
+  newOwnerPhone?: string;
+  message?: string; // Message for ownership transfer requests
+  // Tenant Registration fields
+  tenantName?: string;
+  tenantEmail?: string;
+  tenantPhone?: string;
+  emiratesIdUrl?: string;
+  passportUrl?: string;
+  rentContractUrl?: string;
+  ijaryUrl?: string;
+  // Unit Modifications fields
+  modificationType?: ModificationType;
+  modificationTypeOther?: string;
+  modificationMessage?: string;
+  contactEmail?: string;
+  contactPhone?: string;
   startAt?: string;
   endAt?: string;
 }
@@ -130,4 +181,43 @@ export interface RequestListResponse {
 export interface RequestResponse {
   success: boolean;
   data: Request;
+}
+
+// Message types
+export type UserRole = 'ADMIN' | 'OWNER';
+
+export interface RequestMessage {
+  id: string;
+  requestId: string;
+  authorUserId: string;
+  authorRole: UserRole;
+  body: string;
+  createdAt: string;
+  deletedAt?: string;
+  author: {
+    id: string;
+    name?: string;
+    email: string;
+    role: UserRole;
+  };
+}
+
+export interface CreateMessageDto {
+  body: string;
+}
+
+export interface MessageFilters {
+  limit?: number;
+  cursor?: string;
+}
+
+export interface MessageListResponse {
+  success: boolean;
+  data: RequestMessage[];
+  nextCursor?: string;
+}
+
+export interface MessageResponse {
+  success: boolean;
+  data: RequestMessage;
 }

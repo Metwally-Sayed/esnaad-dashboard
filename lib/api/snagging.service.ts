@@ -10,7 +10,8 @@ import {
   CreateSnaggingDto,
   UpdateOwnerSignatureDto,
   SnaggingFilters,
-  SnaggingListResponse
+  SnaggingListResponse,
+  SnaggingStats
 } from '@/lib/types/snagging.types'
 
 class SnaggingService {
@@ -107,6 +108,15 @@ class SnaggingService {
    */
   async deleteSnagging(id: string): Promise<void> {
     await api.post(`/snaggings/${id}/cancel`)
+  }
+
+  /**
+   * Get snagging stats (admin only)
+   * Returns total counts for each status and special categories
+   */
+  async getStats(): Promise<SnaggingStats> {
+    const response = await api.get<ApiResponse<SnaggingStats>>('/snaggings/stats')
+    return response.data.data!
   }
 
   /**

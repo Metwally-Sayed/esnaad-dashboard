@@ -77,53 +77,54 @@ export function PropertiesTable() {
   }
 
   return (
-    <div className="rounded-lg border border-border bg-card">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Property Name</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Units</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead className="w-[50px]"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {displayProjects.length === 0 ? (
+    <div className="rounded-lg border border-border bg-card overflow-hidden">
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
             <TableRow>
-              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                No projects found
-              </TableCell>
+              <TableHead className="min-w-[150px]">Property Name</TableHead>
+              <TableHead className="hidden md:table-cell min-w-[120px]">Location</TableHead>
+              <TableHead className="hidden sm:table-cell min-w-[60px]">Units</TableHead>
+              <TableHead className="min-w-[80px]">Status</TableHead>
+              <TableHead className="w-[50px]"></TableHead>
             </TableRow>
-          ) : (
-            displayProjects.map((project) => (
-              <TableRow key={project.id}>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
-                      <MapPin className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <span>{project.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-muted-foreground">{project.location}</TableCell>
-                <TableCell>{project.units}</TableCell>
-               
-                <TableCell>
-                  <Badge variant={getStatusVariant(project.status)}>
-                    {getStatusLabel(project.status)}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+          </TableHeader>
+          <TableBody>
+            {displayProjects.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  No projects found
                 </TableCell>
               </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+            ) : (
+              displayProjects.map((project) => (
+                <TableRow key={project.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                        <MapPin className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <span>{project.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="hidden md:table-cell text-muted-foreground">{project.location}</TableCell>
+                  <TableCell className="hidden sm:table-cell">{project.units}</TableCell>
+                  <TableCell>
+                    <Badge variant={getStatusVariant(project.status)}>
+                      {getStatusLabel(project.status)}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 }

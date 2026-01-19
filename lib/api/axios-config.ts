@@ -105,19 +105,31 @@ api.interceptors.response.use(
     // Format error message
     let errorMessage = 'An unexpected error occurred'
 
-    if (error.response?.data?.error?.message) {
-      errorMessage = error.response.data.error.message
+    if (error.response?.data?.error) {
+      // Backend returns error as a string directly: { success: false, error: "message" }
+      if (typeof error.response.data.error === 'string') {
+        errorMessage = error.response.data.error
+      } else if (error.response.data.error.message) {
+        // Fallback for nested message
+        errorMessage = error.response.data.error.message
+      }
+    } else if (error.response?.data?.message) {
+      // Some APIs use message field directly
+      errorMessage = error.response.data.message
     } else if (error.message) {
       errorMessage = error.message
     }
 
-    // Create a more user-friendly error
-    const formattedError = {
-      message: errorMessage,
-      statusCode: error.response?.status || 500,
-      errors: error.response?.data?.error?.errors || null,
-      originalError: error,
+    // Create a proper Error object with additional properties
+    const formattedError = new Error(errorMessage) as Error & {
+      statusCode?: number
+      errors?: any
+      originalError?: any
     }
+
+    formattedError.statusCode = error.response?.status || 500
+    formattedError.errors = error.response?.data?.error?.errors || null
+    formattedError.originalError = error
 
     return Promise.reject(formattedError)
   }

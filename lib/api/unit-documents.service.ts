@@ -70,7 +70,7 @@ class UnitDocumentsService {
     document.body.removeChild(link)
   }
 
-  // Direct upload to R2 via backend (bypasses presigned URL signature issues)
+  // Direct upload to Cloudinary via backend
   async uploadFileDirect(
     file: File,
     onProgress?: (progress: number) => void
@@ -81,9 +81,25 @@ class UnitDocumentsService {
     mimeType: string
     sizeBytes: number
   }> {
+    console.log('📤 [Frontend] Preparing upload:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type
+    })
+
     // Use FormData to send file to backend
     const formData = new FormData()
     formData.append('file', file)
+
+    // Log FormData contents
+    console.log('📦 [Frontend] FormData created:')
+    for (const [key, value] of formData.entries()) {
+      if (value instanceof File) {
+        console.log(`  ${key}: File(name="${value.name}", size=${value.size}, type="${value.type}")`)
+      } else {
+        console.log(`  ${key}:`, value)
+      }
+    }
 
     // Use axios for consistency with all other API calls
     const response = await api.post<ApiResponse<{
@@ -107,6 +123,14 @@ class UnitDocumentsService {
         },
       }
     )
+
+    console.log('✅ [Frontend] Upload response received:', {
+      publicUrl: response.data.data.publicUrl.substring(0, 80) + '...',
+      key: response.data.data.key,
+      fileName: response.data.data.fileName,
+      mimeType: response.data.data.mimeType,
+      sizeBytes: response.data.data.sizeBytes
+    })
 
     return response.data.data
   }

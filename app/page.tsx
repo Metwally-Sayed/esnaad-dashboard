@@ -1,11 +1,11 @@
-'use client';
+import { Metadata } from 'next'
+import { RootContent } from './_components/RootContent'
 
-import { DashboardPage } from "@/components/DashboardPage";
-import { OwnerDashboardPage } from "@/components/OwnerDashboardPage";
-import { useAuth } from "@/contexts/AuthContext";
+export const metadata: Metadata = {
+  title: 'Esnaad Dashboard',
+  description: 'Property management dashboard',
+}
 
-export default function Home() {
-  const { isAdmin } = useAuth();
-
-  return isAdmin ? <DashboardPage /> : <OwnerDashboardPage />;
+export default function HomePage() {
+  return <RootContent />
 }

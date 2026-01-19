@@ -2,6 +2,7 @@
 
 import {
   Building2,
+  DollarSign,
   FolderOpen,
   Home,
   LayoutDashboard,
@@ -28,7 +29,8 @@ export function OwnerDashboardSidebar() {
     //
     // Handovers are also accessed via Unit Profile
     // Access: /units/[unitId] → UnitHandoverWidget
-    { icon: Mail, label: "Requests", href: "/requests" },
+    { icon: Mail, label: "My Requests", href: "/requests" },
+        { icon: DollarSign, label: "Service Charges", href: "/service-charge" },
     { icon: FolderOpen, label: "Documents", href: "/documents" },
   ];
 

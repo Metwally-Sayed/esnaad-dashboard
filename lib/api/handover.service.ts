@@ -479,6 +479,25 @@ export const handoverService = {
   }
 }
 
+// Stats Types
+export interface HandoverStats {
+  total: number
+  draft: number
+  sentToOwner: number
+  accepted: number
+  cancelled: number
+  withPdf: number
+  pendingAction: number
+}
+
+// Get handover stats (Admin only)
+export async function getHandoverStats(): Promise<HandoverStats> {
+  const response = await axios.get<{ success: boolean; data: HandoverStats }>(
+    `${API_BASE}/stats`
+  )
+  return response.data.data
+}
+
 // Unit-specific handovers
 export const unitHandoverService = {
   async getHandoversForUnit(

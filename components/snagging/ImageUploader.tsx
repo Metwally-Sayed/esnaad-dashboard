@@ -7,20 +7,22 @@ import { Textarea } from "@/components/ui/textarea";
 import snaggingService from "@/lib/api/snagging.service";
 import { cn } from "@/lib/utils";
 import { Camera, Image as ImageIcon, Loader2, Upload, X } from "lucide-react";
+import Image from "next/image";
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
-import Image from "next/image";
 
-export interface ImageWithComment {
+export interface ImageWithcaption {
   file?: File;
   imageUrl?: string; // After upload (Cloudinary secure_url)
   publicId?: string; // Cloudinary public_id
-  caption?: string; // Alternative to comment for snagging items
-  comment?: string; // Kept for backward compatibility
+  caption?: string; // Alternative to caption for snagging items
   sortOrder: number;
   uploading?: boolean;
   uploadProgress?: number;
 }
+
+// Alias for backward compatibility
+export type ImageWithComment = ImageWithcaption;
 
 const ALLOWED_IMAGE_TYPES = [
   "image/jpeg",
@@ -33,8 +35,8 @@ const ALLOWED_IMAGE_TYPES = [
 ];
 
 interface ImageUploaderProps {
-  value: ImageWithComment[];
-  onChange: (images: ImageWithComment[]) => void;
+  value: ImageWithcaption[];
+  onChange: (images: ImageWithcaption[]) => void;
   maxFiles?: number;
   maxSize?: number; // in MB
   disabled?: boolean;
@@ -107,9 +109,8 @@ export function ImageUploader({
 
       if (validFiles.length > 0) {
         // Add new images with files (initially with local file for preview)
-        const newImages: ImageWithComment[] = validFiles.map((file, index) => ({
+        const newImages: ImageWithcaption[] = validFiles.map((file, index) => ({
           file,
-          comment: "",
           caption: "",
           sortOrder: currentCount + index,
           uploading: true,
@@ -188,9 +189,9 @@ export function ImageUploader({
     onChange(reordered);
   };
 
-  const updateComment = (index: number, comment: string) => {
+  const updatecaption = (index: number, caption: string) => {
     onChange(
-      value.map((img, idx) => (idx === index ? { ...img, comment } : img))
+      value.map((img, idx) => (idx === index ? { ...img, caption } : img))
     );
   };
 
@@ -311,7 +312,7 @@ export function ImageUploader({
         </div>
       </div>
 
-      {/* Image Cards with Comments */}
+      {/* Image Cards with captions */}
       {value.length > 0 && (
         <div className="space-y-4">
           <p className="text-sm font-medium">
@@ -380,20 +381,26 @@ export function ImageUploader({
                       )}
                     </div>
 
-                    {/* Comment Input */}
+                    {/* caption Input */}
                     <div className="space-y-2">
-                      <Label htmlFor={`comment-${index}`} className="text-xs">
-                        Comment (optional)
-                      </Label>
+                      <div className="flex items-center gap-2">
+                        <Label htmlFor={`caption-${index}`} className="text-sm font-medium">
+                          Image Note
+                        </Label>
+                        <span className="text-xs text-muted-foreground">(optional)</span>
+                      </div>
                       <Textarea
-                        id={`comment-${index}`}
-                        placeholder="Add a comment for this image..."
-                        value={image.comment || ""}
-                        onChange={(e) => updateComment(index, e.target.value)}
+                        id={`caption-${index}`}
+                        placeholder="Add a detailed note or description for this image. For example: describe the issue, location, or any important observations..."
+                        value={image.caption || ""}
+                        onChange={(e) => updatecaption(index, e.target.value)}
                         disabled={disabled || isUploading}
-                        rows={2}
-                        className="text-sm"
+                        rows={3}
+                        className="text-sm resize-y min-h-[80px]"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        This note will be displayed alongside the image in the snagging report
+                      </p>
                     </div>
                   </CardContent>
                 </Card>

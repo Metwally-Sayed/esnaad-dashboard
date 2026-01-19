@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle, FileText, Calendar, Download, Loader2, Plus, Eye, MapPin, AlertTriangle, CheckCircle } from 'lucide-react'
+import { AlertCircle, FileText, Calendar, Download, Loader2, Plus, Eye, MapPin, AlertTriangle, CheckCircle, MessageSquare } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useUnitSnaggings, useAcceptSnagging } from '@/lib/hooks/use-snagging'
 import { Snagging } from '@/lib/types/snagging.types'
@@ -324,29 +324,51 @@ export function UnitSnaggingWidget({
                             {/* Images */}
                             {item.images && item.images.length > 0 && (
                               <div className="pt-2">
-                                <p className="text-xs font-medium text-muted-foreground mb-2">
+                                <p className="text-xs font-medium text-muted-foreground mb-3">
                                   {item.images.length} Image{item.images.length !== 1 ? 's' : ''}
                                 </p>
-                                <div className="grid grid-cols-3 gap-2">
-                                  {item.images.map((image) => (
-                                    <a
-                                      key={image.id}
-                                      href={image.imageUrl}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="group relative aspect-square rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-primary transition-all"
-                                    >
-                                      <Image
-                                        src={image.imageUrl}
-                                        alt={image.caption || `Issue ${index + 1} image`}
-                                        width={200}
-                                        height={200}
-                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                                      />
-                                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
-                                        <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
-                                      </div>
-                                    </a>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                  {item.images.map((image, imageIndex) => (
+                                    <div key={image.id} className="space-y-2">
+                                      <a
+                                        href={image.imageUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="group relative aspect-video rounded-lg overflow-hidden bg-muted hover:ring-2 hover:ring-primary transition-all block"
+                                      >
+                                        <Image
+                                          src={image.imageUrl}
+                                          alt={image.caption || `Issue ${index + 1} image ${imageIndex + 1}`}
+                                          width={400}
+                                          height={225}
+                                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                                        />
+                                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                          <Eye className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                                        </div>
+                                        <Badge
+                                          variant="secondary"
+                                          className="absolute top-2 left-2 text-xs"
+                                        >
+                                          #{imageIndex + 1}
+                                        </Badge>
+                                      </a>
+                                      {image.caption && (
+                                        <div className="relative p-2.5 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
+                                          <div className="flex items-start gap-2">
+                                            <MessageSquare className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                              <p className="text-xs font-medium text-blue-900 dark:text-blue-100 mb-0.5">
+                                                Image Note
+                                              </p>
+                                              <p className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed whitespace-pre-wrap break-words">
+                                                {image.caption}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
                                   ))}
                                 </div>
                               </div>
