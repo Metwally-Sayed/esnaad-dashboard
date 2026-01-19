@@ -253,19 +253,19 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
         </Card>
       )}
 
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Left Column - Basic Information */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Basic Information */}
           <Card className="border-primary/20">
             <CardHeader>
-              <CardTitle>Basic Information</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Basic Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Unit Code */}
                 <div>
-                  <Label htmlFor="unitCode">
+                  <Label htmlFor="unitCode" className="text-sm sm:text-base">
                     Unit Code <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -273,14 +273,14 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     value={formData.unitCode || ''}
                     onChange={(e) => handleInputChange('unitCode', e.target.value)}
                     onBlur={() => handleBlur('unitCode')}
-                    className={`mt-1.5 ${errors.unitCode && touched.unitCode ? 'border-destructive' : ''}`}
+                    className={`mt-1.5 h-10 sm:h-9 ${errors.unitCode && touched.unitCode ? 'border-destructive' : ''}`}
                     placeholder="e.g., A-101, V-205"
                   />
                   {errors.unitCode && touched.unitCode && (
-                    <p className="text-sm text-destructive mt-1">{errors.unitCode}</p>
+                    <p className="text-xs sm:text-sm text-destructive mt-1">{errors.unitCode}</p>
                   )}
                   {!errors.unitCode && isCreateMode && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Must be unique across all units
                     </p>
                   )}
@@ -290,7 +290,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
 
                 {/* Unit Type */}
                 <div>
-                  <Label htmlFor="unitType">
+                  <Label htmlFor="unitType" className="text-sm sm:text-base">
                     Unit Type <span className="text-destructive">*</span>
                   </Label>
                   <Select
@@ -299,7 +299,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                       handleInputChange('unitType', value)
                     }
                   >
-                    <SelectTrigger className="mt-1.5">
+                    <SelectTrigger className="mt-1.5 h-10 sm:h-9">
                       <SelectValue placeholder="Select unit type" />
                     </SelectTrigger>
                     <SelectContent>
@@ -331,7 +331,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
 
                 {/* Project Selection */}
                 <div>
-                  <Label htmlFor="projectId">
+                  <Label htmlFor="projectId" className="text-sm sm:text-base">
                     Project <span className="text-destructive">*</span>
                   </Label>
                   <Select
@@ -386,7 +386,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     disabled={lockProject}
                   >
                     <SelectTrigger
-                      className={`mt-1.5 ${errors.projectId && touched.projectId ? 'border-destructive' : ''} ${hasAuthError ? 'border-yellow-500' : ''}`}
+                      className={`mt-1.5 h-10 sm:h-9 ${errors.projectId && touched.projectId ? 'border-destructive' : ''} ${hasAuthError ? 'border-yellow-500' : ''}`}
                     >
                       <SelectValue placeholder={hasAuthError ? "Login required - Using fallback data" : "Select a project"} />
                     </SelectTrigger>
@@ -406,10 +406,10 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     </SelectContent>
                   </Select>
                   {errors.projectId && touched.projectId && (
-                    <p className="text-sm text-destructive mt-1">{errors.projectId}</p>
+                    <p className="text-xs sm:text-sm text-destructive mt-1">{errors.projectId}</p>
                   )}
                   {lockProject && formData.projectId && formData.projectId !== 'none' && (
-                    <p className="text-sm text-primary mt-1 flex items-center gap-1">
+                    <p className="text-xs sm:text-sm text-primary mt-1 flex items-center gap-1">
                       <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
@@ -417,7 +417,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     </p>
                   )}
                   {!lockProject && !errors.projectId && formData.projectId && formData.projectId !== 'none' && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Unit will be assigned to: {formData.projectName}
                     </p>
                   )}
@@ -427,7 +427,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
 
                 {/* Building Name */}
                 <div>
-                  <Label htmlFor="buildingName">
+                  <Label htmlFor="buildingName" className="text-sm sm:text-base">
                     Building Name
                   </Label>
                   <Input
@@ -435,10 +435,10 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     value={formData.buildingName || ''}
                     onChange={(e) => handleInputChange('buildingName', e.target.value)}
                     onBlur={() => handleBlur('buildingName')}
-                    className="mt-1.5"
+                    className="mt-1.5 h-10 sm:h-9"
                     placeholder="e.g., Tower A, Building 1"
                   />
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     Optional - Specific building within the project
                   </p>
                 </div>
@@ -447,7 +447,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
 
                 {/* Address */}
                 <div>
-                  <Label htmlFor="address">
+                  <Label htmlFor="address" className="text-sm sm:text-base">
                     Address <span className="text-destructive">*</span>
                   </Label>
                   <Textarea
@@ -459,7 +459,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     placeholder="Enter full address including city and postal code"
                   />
                   {errors.address && touched.address && (
-                    <p className="text-sm text-destructive mt-1">{errors.address}</p>
+                    <p className="text-xs sm:text-sm text-destructive mt-1">{errors.address}</p>
                   )}
                 </div>
               </div>
@@ -470,10 +470,10 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
           {isCreateMode && (
             <Card className="bg-blue-50 border-blue-200">
               <CardHeader>
-                <CardTitle className="text-blue-900">Guidelines</CardTitle>
+                <CardTitle className="text-blue-900 text-lg sm:text-xl">Guidelines</CardTitle>
               </CardHeader>
               <CardContent>
-                <ul className="space-y-2 text-sm text-blue-800">
+                <ul className="space-y-2 text-xs sm:text-sm text-blue-800">
                   <li>• Fields marked with <span className="text-destructive">*</span> are required</li>
                   <li>• Unit code must be unique across all properties</li>
                   <li>• Size should be entered in square meters (sqm)</li>
@@ -488,20 +488,20 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
           {isEditMode && formData.id && (
             <Card className="bg-muted/50">
               <CardHeader>
-                <CardTitle className="text-base">Unit Information</CardTitle>
+                <CardTitle className="text-base sm:text-lg">Unit Information</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Unit ID:</span>
-                    <span className="text-sm font-mono font-medium">#{formData.id}</span>
+                    <span className="text-xs sm:text-sm text-muted-foreground">Unit ID:</span>
+                    <span className="text-xs sm:text-sm font-mono font-medium">#{formData.id}</span>
                   </div>
                   {formData.createdAt && (
                     <>
                       <Separator />
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Created:</span>
-                        <span className="text-sm font-medium">{formData.createdAt}</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">Created:</span>
+                        <span className="text-xs sm:text-sm font-medium">{formData.createdAt}</span>
                       </div>
                     </>
                   )}
@@ -509,8 +509,8 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     <>
                       <Separator />
                       <div className="flex justify-between items-center">
-                        <span className="text-sm text-muted-foreground">Last Updated:</span>
-                        <span className="text-sm font-medium">{formData.lastUpdated}</span>
+                        <span className="text-xs sm:text-sm text-muted-foreground">Last Updated:</span>
+                        <span className="text-xs sm:text-sm font-medium">{formData.lastUpdated}</span>
                       </div>
                     </>
                   )}
@@ -521,17 +521,17 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
         </div>
 
         {/* Right Column - Details & Status */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Unit Details */}
           <Card className="border-primary/20">
             <CardHeader>
-              <CardTitle>Unit Details</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Unit Details</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {/* Floor */}
                 <div>
-                  <Label htmlFor="floor">
+                  <Label htmlFor="floor" className="text-sm sm:text-base">
                     Floor <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -539,11 +539,11 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     value={formData.floor || ''}
                     onChange={(e) => handleInputChange('floor', e.target.value)}
                     onBlur={() => handleBlur('floor')}
-                    className={`mt-1.5 ${errors.floor && touched.floor ? 'border-destructive' : ''}`}
+                    className={`mt-1.5 h-10 sm:h-9 ${errors.floor && touched.floor ? 'border-destructive' : ''}`}
                     placeholder="e.g., 1st Floor, Ground, 5"
                   />
                   {errors.floor && touched.floor && (
-                    <p className="text-sm text-destructive mt-1">{errors.floor}</p>
+                    <p className="text-xs sm:text-sm text-destructive mt-1">{errors.floor}</p>
                   )}
                 </div>
 
@@ -551,7 +551,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
 
                 {/* Size */}
                 <div>
-                  <Label htmlFor="size">
+                  <Label htmlFor="size" className="text-sm sm:text-base">
                     Size (sqm) <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -562,14 +562,14 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     value={formData.size || ''}
                     onChange={(e) => handleInputChange('size', e.target.value)}
                     onBlur={() => handleBlur('size')}
-                    className={`mt-1.5 ${errors.size && touched.size ? 'border-destructive' : ''}`}
+                    className={`mt-1.5 h-10 sm:h-9 ${errors.size && touched.size ? 'border-destructive' : ''}`}
                     placeholder="e.g., 120.5"
                   />
                   {errors.size && touched.size && (
-                    <p className="text-sm text-destructive mt-1">{errors.size}</p>
+                    <p className="text-xs sm:text-sm text-destructive mt-1">{errors.size}</p>
                   )}
                   {!errors.size && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Enter size in square meters
                     </p>
                   )}
@@ -579,7 +579,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
 
                 {/* Bedrooms */}
                 <div>
-                  <Label htmlFor="bedrooms">Bedrooms</Label>
+                  <Label htmlFor="bedrooms" className="text-sm sm:text-base">Bedrooms</Label>
                   <Input
                     id="bedrooms"
                     type="number"
@@ -587,14 +587,14 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     value={formData.bedrooms || ''}
                     onChange={(e) => handleInputChange('bedrooms', e.target.value)}
                     onBlur={() => handleBlur('bedrooms')}
-                    className={`mt-1.5 ${errors.bedrooms && touched.bedrooms ? 'border-destructive' : ''}`}
+                    className={`mt-1.5 h-10 sm:h-9 ${errors.bedrooms && touched.bedrooms ? 'border-destructive' : ''}`}
                     placeholder="e.g., 2"
                   />
                   {errors.bedrooms && touched.bedrooms && (
-                    <p className="text-sm text-destructive mt-1">{errors.bedrooms}</p>
+                    <p className="text-xs sm:text-sm text-destructive mt-1">{errors.bedrooms}</p>
                   )}
                   {!errors.bedrooms && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Optional - Enter 0 for studios
                     </p>
                   )}
@@ -604,7 +604,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
 
                 {/* Bathrooms */}
                 <div>
-                  <Label htmlFor="bathrooms">Bathrooms</Label>
+                  <Label htmlFor="bathrooms" className="text-sm sm:text-base">Bathrooms</Label>
                   <Input
                     id="bathrooms"
                     type="number"
@@ -613,14 +613,14 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     value={formData.bathrooms || ''}
                     onChange={(e) => handleInputChange('bathrooms', e.target.value)}
                     onBlur={() => handleBlur('bathrooms')}
-                    className={`mt-1.5 ${errors.bathrooms && touched.bathrooms ? 'border-destructive' : ''}`}
+                    className={`mt-1.5 h-10 sm:h-9 ${errors.bathrooms && touched.bathrooms ? 'border-destructive' : ''}`}
                     placeholder="e.g., 2"
                   />
                   {errors.bathrooms && touched.bathrooms && (
-                    <p className="text-sm text-destructive mt-1">{errors.bathrooms}</p>
+                    <p className="text-xs sm:text-sm text-destructive mt-1">{errors.bathrooms}</p>
                   )}
                   {!errors.bathrooms && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Optional - Can use decimals (e.g., 2.5)
                     </p>
                   )}
@@ -630,7 +630,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
 
                 {/* Price */}
                 <div>
-                  <Label htmlFor="price">Unit Price (AED)</Label>
+                  <Label htmlFor="price" className="text-sm sm:text-base">Unit Price (AED)</Label>
                   <Input
                     id="price"
                     type="number"
@@ -639,14 +639,14 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     value={formData.price || ''}
                     onChange={(e) => handleInputChange('price', e.target.value)}
                     onBlur={() => handleBlur('price')}
-                    className={`mt-1.5 ${errors.price && touched.price ? 'border-destructive' : ''}`}
+                    className={`mt-1.5 h-10 sm:h-9 ${errors.price && touched.price ? 'border-destructive' : ''}`}
                     placeholder="e.g., 500000"
                   />
                   {errors.price && touched.price && (
-                    <p className="text-sm text-destructive mt-1">{errors.price}</p>
+                    <p className="text-xs sm:text-sm text-destructive mt-1">{errors.price}</p>
                   )}
                   {!errors.price && (
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                       Optional - Required for service charge calculation
                     </p>
                   )}
@@ -658,12 +658,12 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
           {/* Owner Assignment */}
           <Card className="border-primary/20">
             <CardHeader>
-              <CardTitle>Owner Assignment</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Owner Assignment</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <Label htmlFor="ownerId">
+                  <Label htmlFor="ownerId" className="text-sm sm:text-base">
                     Assign Owner
                   </Label>
                   <Select
@@ -712,7 +712,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                     }}
                     disabled={isLoadingOwners}
                   >
-                    <SelectTrigger className={`mt-1.5 ${hasAuthError ? 'border-yellow-500' : ''}`}>
+                    <SelectTrigger className={`mt-1.5 h-10 sm:h-9 ${hasAuthError ? 'border-yellow-500' : ''}`}>
                       <SelectValue placeholder={
                         hasAuthError ? "Login required - Using fallback data" :
                         isLoadingOwners ? "Loading owners..." :
@@ -739,18 +739,18 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                       )}
                     </SelectContent>
                   </Select>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     Optional - Select from existing owners in the system
                   </p>
                 </div>
 
                 {formData.ownerId && formData.ownerId !== 'none' && (
-                  <div className="p-3 bg-muted/50 rounded-md">
-                    <p className="text-sm text-muted-foreground mb-1">Selected Owner:</p>
+                  <div className="p-2 sm:p-3 bg-muted/50 rounded-md">
+                    <p className="text-xs sm:text-sm text-muted-foreground mb-1">Selected Owner:</p>
                     <div>
-                      <p className="font-medium">{formData.ownerName}</p>
+                      <p className="text-sm sm:text-base font-medium">{formData.ownerName}</p>
                       {displayOwners?.find(o => o.id === formData.ownerId) && (
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           {displayOwners.find(o => o.id === formData.ownerId)?.email}
                         </p>
                       )}
@@ -764,11 +764,11 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
           {/* Amenities */}
           <Card className="border-primary/20">
             <CardHeader>
-              <CardTitle>Amenities & Features</CardTitle>
+              <CardTitle className="text-lg sm:text-xl">Amenities & Features</CardTitle>
             </CardHeader>
             <CardContent>
               <div>
-                <Label htmlFor="amenities">Amenities</Label>
+                <Label htmlFor="amenities" className="text-sm sm:text-base">Amenities</Label>
                 <Textarea
                   id="amenities"
                   value={formData.amenities || ''}
@@ -776,7 +776,7 @@ export const UnitForm = forwardRef<UnitFormHandle, UnitFormProps>(function UnitF
                   className="mt-1.5 min-h-[100px]"
                   placeholder="List amenities (e.g., parking, balcony, pool access, gym)"
                 />
-                <p className="text-sm text-muted-foreground mt-1">
+                <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                   Optional - List key features and amenities
                 </p>
               </div>

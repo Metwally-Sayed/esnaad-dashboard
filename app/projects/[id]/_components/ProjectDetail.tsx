@@ -210,11 +210,12 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
 
   if (isLoading) {
     return (
-      <div className="max-w-[1440px] mx-auto p-8 space-y-6">
+      <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Projects
+            <span className="hidden sm:inline">Back to Projects</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
 
@@ -234,11 +235,12 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
 
   if (error || !project) {
     return (
-      <div className="max-w-[1440px] mx-auto p-8 space-y-6">
+      <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => router.push('/projects')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Projects
+            <span className="hidden sm:inline">Back to Projects</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
 
@@ -257,32 +259,37 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
   const unitCount = project._count?.units || project.units?.length || 0
 
   return (
-    <div className="max-w-[1440px] mx-auto p-8 space-y-6">
+    <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => router.push('/projects')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Projects
+            <span className="hidden sm:inline">Back to Projects</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
 
         {isAdmin && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button
               variant="outline"
               onClick={() => setIsEditDialogOpen(true)}
+              size="sm"
+              className="flex-1 sm:flex-none"
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Project
+              <Edit className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Edit Project</span>
             </Button>
             <Button
               variant="destructive"
               onClick={() => setIsDeleteDialogOpen(true)}
               disabled={isDeleting}
+              size="sm"
+              className="flex-1 sm:flex-none"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Project
+              <Trash2 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Delete Project</span>
             </Button>
           </div>
         )}
@@ -293,15 +300,15 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <Building2 className="h-8 w-8 text-primary" />
-                <CardTitle className="text-3xl">{project.name}</CardTitle>
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <Building2 className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                <CardTitle className="text-2xl sm:text-3xl">{project.name}</CardTitle>
                 <Badge className={status.className}>
                   {status.label}
                 </Badge>
               </div>
               {project.description && (
-                <CardDescription className="text-base">
+                <CardDescription className="text-sm sm:text-base">
                   {project.description}
                 </CardDescription>
               )}
@@ -312,77 +319,77 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
         <CardContent>
           {/* Project Image */}
           {project.imageUrl && (
-            <div className="mb-6">
+            <div className="mb-4 sm:mb-6">
               <Image
                 src={project.imageUrl}
                 alt={project.name}
                 width={1200}
                 height={256}
-                className="w-full h-64 object-cover rounded-lg"
+                className="w-full h-48 sm:h-64 object-cover rounded-lg"
               />
             </div>
           )}
 
           {/* Project Information Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Location */}
             {project.location && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin className="h-4 w-4" />
                   <span className="text-sm font-medium">Location</span>
                 </div>
-                <p className="text-lg">{project.location}</p>
+                <p className="text-base sm:text-lg">{project.location}</p>
               </div>
             )}
 
             {/* Start Date */}
             {project.startDate && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="h-4 w-4" />
                   <span className="text-sm font-medium">Start Date</span>
                 </div>
-                <p className="text-lg">{formatDate(project.startDate)}</p>
+                <p className="text-base sm:text-lg">{formatDate(project.startDate)}</p>
               </div>
             )}
 
             {/* End Date */}
             {project.endDate && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <CheckCircle2 className="h-4 w-4" />
                   <span className="text-sm font-medium">End Date</span>
                 </div>
-                <p className="text-lg">{formatDate(project.endDate)}</p>
+                <p className="text-base sm:text-lg">{formatDate(project.endDate)}</p>
               </div>
             )}
 
             {/* Total Units */}
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Home className="h-4 w-4" />
                 <span className="text-sm font-medium">Total Units</span>
               </div>
-              <p className="text-lg">{unitCount} units</p>
+              <p className="text-base sm:text-lg">{unitCount} units</p>
             </div>
 
             {/* Created Date */}
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span className="text-sm font-medium">Created</span>
               </div>
-              <p className="text-lg">{formatDate(project.createdAt)}</p>
+              <p className="text-base sm:text-lg">{formatDate(project.createdAt)}</p>
             </div>
 
             {/* Last Updated */}
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span className="text-sm font-medium">Last Updated</span>
               </div>
-              <p className="text-lg">{formatDate(project.updatedAt)}</p>
+              <p className="text-base sm:text-lg">{formatDate(project.updatedAt)}</p>
             </div>
           </div>
         </CardContent>
@@ -391,18 +398,22 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
       {/* Units Section */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-xl sm:text-2xl">
                 <Home className="h-5 w-5" />
                 Project Units
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-sm">
                 Manage and view all units in this project
               </CardDescription>
             </div>
             {isAdmin && (
-              <Button onClick={() => router.push(`/units/create?projectId=${projectId}`)}>
+              <Button
+                onClick={() => router.push(`/units/create?projectId=${projectId}`)}
+                size="sm"
+                className="w-full sm:w-auto"
+              >
                 <Plus className="h-4 w-4 mr-2" />
                 Add Unit
               </Button>
@@ -411,26 +422,26 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
         </CardHeader>
         <CardContent>
           {/* Units Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            <div className="bg-background p-3 rounded-lg border">
-              <p className="text-sm text-muted-foreground">Total Units</p>
-              <p className="text-2xl font-bold">{unitsPagination?.total || 0}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+            <div className="bg-background p-2 sm:p-3 rounded-lg border">
+              <p className="text-xs sm:text-sm text-muted-foreground">Total Units</p>
+              <p className="text-xl sm:text-2xl font-bold">{unitsPagination?.total || 0}</p>
             </div>
-            <div className="bg-background p-3 rounded-lg border">
-              <p className="text-sm text-muted-foreground">Available</p>
-              <p className="text-2xl font-bold text-green-600">
+            <div className="bg-background p-2 sm:p-3 rounded-lg border">
+              <p className="text-xs sm:text-sm text-muted-foreground">Available</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600">
                 {units.filter(u => !u.ownerId).length}
               </p>
             </div>
-            <div className="bg-background p-3 rounded-lg border">
-              <p className="text-sm text-muted-foreground">Occupied</p>
-              <p className="text-2xl font-bold text-blue-600">
+            <div className="bg-background p-2 sm:p-3 rounded-lg border">
+              <p className="text-xs sm:text-sm text-muted-foreground">Occupied</p>
+              <p className="text-xl sm:text-2xl font-bold text-blue-600">
                 {units.filter(u => u.ownerId).length}
               </p>
             </div>
-            <div className="bg-background p-3 rounded-lg border">
-              <p className="text-sm text-muted-foreground">Maintenance</p>
-              <p className="text-2xl font-bold text-yellow-600">
+            <div className="bg-background p-2 sm:p-3 rounded-lg border">
+              <p className="text-xs sm:text-sm text-muted-foreground">Maintenance</p>
+              <p className="text-xl sm:text-2xl font-bold text-yellow-600">
                 0
               </p>
             </div>
@@ -450,25 +461,25 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
           {/* Pagination */}
           {unitsPagination && unitsPagination.totalPages > 1 && (
             <div className="mt-4">
-              <div className="flex items-center justify-between px-2 py-4">
-                <div className="text-muted-foreground text-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-2 py-4">
+                <div className="text-muted-foreground text-xs sm:text-sm text-center sm:text-left">
                   Showing {(unitsPagination.page - 1) * unitsPagination.limit + 1} to{' '}
                   {Math.min(unitsPagination.page * unitsPagination.limit, unitsPagination.total)} of{' '}
                   {unitsPagination.total} units
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center gap-2">
                   <Button
                     variant="outline"
                     size="sm"
                     disabled={unitsPagination.page === 1}
                     onClick={() => handleUnitsPageChange(unitsPagination.page - 1)}
                   >
-                    <ChevronLeft className="h-4 w-4 mr-1" />
-                    Previous
+                    <ChevronLeft className="h-4 w-4 sm:mr-1" />
+                    <span className="hidden sm:inline">Previous</span>
                   </Button>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 overflow-x-auto">
                     {(() => {
                       const maxVisible = 5;
                       let start = Math.max(1, unitsPagination.page - Math.floor(maxVisible / 2));
@@ -503,8 +514,8 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
                     disabled={unitsPagination.page === unitsPagination.totalPages}
                     onClick={() => handleUnitsPageChange(unitsPagination.page + 1)}
                   >
-                    Next
-                    <ChevronRight className="h-4 w-4 ml-1" />
+                    <span className="hidden sm:inline">Next</span>
+                    <ChevronRight className="h-4 w-4 sm:ml-1" />
                   </Button>
                 </div>
               </div>
@@ -537,7 +548,7 @@ export function ProjectDetail({ projectId }: ProjectDetailsPageProps) {
           maxWidth="lg"
         >
           <Form {...form}>
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               {/* Project Name */}
               <FormField
                 control={form.control}

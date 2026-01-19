@@ -102,15 +102,15 @@ export function VerificationDetailContent({ userId }: Props) {
   const canApprove = verification.verificationStatus === 'PENDING_APPROVAL' && passportDoc && nationalIdDoc
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3 sm:gap-4">
         <Button variant="outline" size="icon" onClick={() => router.back()}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-semibold">Verification Details</h1>
-          <p className="text-muted-foreground mt-1">Review and approve owner documents</p>
+          <h1 className="text-2xl sm:text-3xl font-semibold">Verification Details</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">Review and approve owner documents</p>
         </div>
       </div>
 
@@ -126,7 +126,7 @@ export function VerificationDetailContent({ userId }: Props) {
           </div>
         </CardHeader>
         <CardContent className="space-y-2">
-          <div className="grid grid-cols-2 gap-4 text-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
             <div>
               <span className="text-muted-foreground">Phone:</span>
               <span className="ml-2">{verification.phone || 'N/A'}</span>
@@ -157,7 +157,7 @@ export function VerificationDetailContent({ userId }: Props) {
       </Card>
 
       {/* Documents */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 sm:gap-6 md:grid-cols-2">
         {/* Passport */}
         <Card>
           <CardHeader>

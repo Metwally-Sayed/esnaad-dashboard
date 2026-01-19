@@ -233,11 +233,12 @@ export function UnitDetailsPage({ unitId }: UnitDetailsPageProps) {
 
   if (isLoading) {
     return (
-      <div className="max-w-[1440px] mx-auto p-8 space-y-6">
+      <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Units
+            <span className="hidden sm:inline">Back to Units</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
 
@@ -257,11 +258,12 @@ export function UnitDetailsPage({ unitId }: UnitDetailsPageProps) {
 
   if (error || !unit) {
     return (
-      <div className="max-w-[1440px] mx-auto p-8 space-y-6">
+      <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => router.push('/units')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Units
+            <span className="hidden sm:inline">Back to Units</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
 
@@ -276,50 +278,59 @@ export function UnitDetailsPage({ unitId }: UnitDetailsPageProps) {
   }
 
   return (
-    <div className="max-w-[1440px] mx-auto p-8 space-y-6">
+    <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" onClick={() => router.push('/units')}>
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Units
+            <span className="hidden sm:inline">Back to Units</span>
+            <span className="sm:hidden">Back</span>
           </Button>
         </div>
 
         {isAdmin && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {unit.ownerId ? (
               <Button
                 variant="outline"
                 onClick={() => handleRemoveOwner()}
                 disabled={isAssigning}
+                size="sm"
+                className="flex-1 sm:flex-none"
               >
-                <UserMinus className="h-4 w-4 mr-2" />
-                Remove Owner
+                <UserMinus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Remove Owner</span>
               </Button>
             ) : (
               <Button
                 variant="outline"
                 onClick={() => setIsAssignDialogOpen(true)}
+                size="sm"
+                className="flex-1 sm:flex-none"
               >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Assign Owner
+                <UserPlus className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Assign Owner</span>
               </Button>
             )}
             <Button
               variant="outline"
               onClick={() => setIsEditDialogOpen(true)}
+              size="sm"
+              className="flex-1 sm:flex-none"
             >
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Unit
+              <Edit className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Edit Unit</span>
             </Button>
             <Button
               variant="destructive"
               onClick={() => setIsDeleteDialogOpen(true)}
               disabled={isDeleting}
+              size="sm"
+              className="flex-1 sm:flex-none"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Unit
+              <Trash2 className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Delete Unit</span>
             </Button>
           </div>
         )}
@@ -330,12 +341,12 @@ export function UnitDetailsPage({ unitId }: UnitDetailsPageProps) {
         <CardHeader>
           <div className="flex items-start justify-between">
             <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <Home className="h-8 w-8 text-primary" />
-                <CardTitle className="text-3xl">{unit.unitNumber}</CardTitle>
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Home className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                <CardTitle className="text-2xl sm:text-3xl">{unit.unitNumber}</CardTitle>
               </div>
               {unit.description && (
-                <CardDescription className="text-base">
+                <CardDescription className="text-sm sm:text-base">
                   {unit.description}
                 </CardDescription>
               )}
@@ -345,100 +356,100 @@ export function UnitDetailsPage({ unitId }: UnitDetailsPageProps) {
 
         <CardContent>
           {/* Unit Information Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {/* Building */}
             {unit.buildingName && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Building2 className="h-4 w-4" />
                   <span className="text-sm font-medium">Building</span>
                 </div>
-                <p className="text-lg">{unit.buildingName}</p>
+                <p className="text-base sm:text-lg">{unit.buildingName}</p>
               </div>
             )}
 
             {/* Project */}
             {unit.project && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin className="h-4 w-4" />
                   <span className="text-sm font-medium">Project</span>
                 </div>
-                <p className="text-lg">{unit.project.name}</p>
+                <p className="text-base sm:text-lg">{unit.project.name}</p>
               </div>
             )}
 
             {/* Floor */}
             {unit.floor !== null && unit.floor !== undefined && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Hash className="h-4 w-4" />
                   <span className="text-sm font-medium">Floor</span>
                 </div>
-                <p className="text-lg">Floor {unit.floor}</p>
+                <p className="text-base sm:text-lg">Floor {unit.floor}</p>
               </div>
             )}
 
             {/* Area */}
             {unit.area && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Ruler className="h-4 w-4" />
                   <span className="text-sm font-medium">Area</span>
                 </div>
-                <p className="text-lg">{formatArea(unit.area)}</p>
+                <p className="text-base sm:text-lg">{formatArea(unit.area)}</p>
               </div>
             )}
 
             {/* Bedrooms */}
             {unit.bedrooms !== null && unit.bedrooms !== undefined && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Bed className="h-4 w-4" />
                   <span className="text-sm font-medium">Bedrooms</span>
                 </div>
-                <p className="text-lg">{unit.bedrooms} {unit.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</p>
+                <p className="text-base sm:text-lg">{unit.bedrooms} {unit.bedrooms === 1 ? 'bedroom' : 'bedrooms'}</p>
               </div>
             )}
 
             {/* Bathrooms */}
             {unit.bathrooms !== null && unit.bathrooms !== undefined && (
-              <div className="space-y-2">
+              <div className="space-y-1 sm:space-y-2">
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Bath className="h-4 w-4" />
                   <span className="text-sm font-medium">Bathrooms</span>
                 </div>
-                <p className="text-lg">{unit.bathrooms} {unit.bathrooms === 1 ? 'bathroom' : 'bathrooms'}</p>
+                <p className="text-base sm:text-lg">{unit.bathrooms} {unit.bathrooms === 1 ? 'bathroom' : 'bathrooms'}</p>
               </div>
             )}
 
             {/* Owner */}
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <User className="h-4 w-4" />
                 <span className="text-sm font-medium">Owner</span>
               </div>
-              <p className="text-lg">
+              <p className="text-base sm:text-lg">
                 {unit.owner ? (unit.owner.name || unit.owner.email) : 'Unassigned'}
               </p>
             </div>
 
             {/* Created Date */}
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span className="text-sm font-medium">Created</span>
               </div>
-              <p className="text-lg">{formatDate(unit.createdAt)}</p>
+              <p className="text-base sm:text-lg">{formatDate(unit.createdAt)}</p>
             </div>
 
             {/* Last Updated */}
-            <div className="space-y-2">
+            <div className="space-y-1 sm:space-y-2">
               <div className="flex items-center gap-2 text-muted-foreground">
                 <Clock className="h-4 w-4" />
                 <span className="text-sm font-medium">Last Updated</span>
               </div>
-              <p className="text-lg">{formatDate(unit.updatedAt)}</p>
+              <p className="text-base sm:text-lg">{formatDate(unit.updatedAt)}</p>
             </div>
           </div>
         </CardContent>
@@ -508,8 +519,8 @@ export function UnitDetailsPage({ unitId }: UnitDetailsPageProps) {
           maxWidth="2xl"
         >
           <Form {...form}>
-            <form className="space-y-6">
-              <div className="grid grid-cols-2 gap-4">
+            <form className="space-y-4 sm:space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Unit Number */}
                 <FormField
                   control={form.control}

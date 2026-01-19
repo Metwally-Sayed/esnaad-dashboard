@@ -122,38 +122,38 @@ export function UnitCreatePage({ onCancel, onCreate, defaultProjectId, lockProje
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto p-8">
+    <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8">
       {/* Page Header */}
-      <div className="flex items-start justify-between mb-8">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-semibold">Create Unit</h1>
-            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+      <div className="flex flex-col gap-4 mb-6 sm:flex-row sm:items-start sm:justify-between sm:mb-8">
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-semibold">Create Unit</h1>
+            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 shrink-0">
               <Building2 className="h-3 w-3 mr-1" />
               New Unit
             </Badge>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-sm sm:text-base text-muted-foreground">
             Add a new property unit to the system
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={handleCancel} disabled={isCreating}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel
+        <div className="flex items-center gap-2 sm:shrink-0">
+          <Button variant="outline" onClick={handleCancel} disabled={isCreating} className="flex-1 sm:flex-none">
+            <X className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Cancel</span>
           </Button>
-          <Button onClick={handleCreate} disabled={isCreating}>
+          <Button onClick={handleCreate} disabled={isCreating} className="flex-1 sm:flex-none">
             {isCreating ? (
               <>
                 <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                Creating...
+                <span className="hidden sm:inline">Creating...</span>
               </>
             ) : (
               <>
-                <Save className="h-4 w-4 mr-2" />
-                Create Unit
+                <Save className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Create Unit</span>
               </>
             )}
           </Button>

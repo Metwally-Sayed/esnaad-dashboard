@@ -109,10 +109,11 @@ export function RequestDetailContent({ requestId }: RequestDetailContentProps) {
   return (
     <div className="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
       <div className="mb-6">
-        <Button variant="ghost" asChild>
+        <Button variant="ghost" size="sm" asChild>
           <Link href="/requests">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Requests
+            <span className="hidden sm:inline">Back to Requests</span>
+            <span className="sm:hidden">Back</span>
           </Link>
         </Button>
       </div>

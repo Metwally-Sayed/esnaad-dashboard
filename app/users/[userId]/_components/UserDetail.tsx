@@ -41,10 +41,11 @@ export function UserDetail({
 
   if (isLoading || !user) {
     return (
-      <div className="max-w-[1440px] mx-auto p-8">
-        <Button variant="ghost" className="mb-6" onClick={onBack}>
+      <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8">
+        <Button variant="ghost" size="sm" className="mb-6" onClick={onBack}>
           <ChevronLeft className="h-4 w-4 mr-1" />
-          Back to Users
+          <span className="hidden sm:inline">Back to Users</span>
+          <span className="sm:hidden">Back</span>
         </Button>
 
         <div className="space-y-6">
@@ -130,22 +131,24 @@ export function UserDetail({
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto p-8">
+    <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8">
       {/* Back Button */}
       <Button
         variant="ghost"
+        size="sm"
         className="mb-6"
         onClick={onBack}
       >
         <ChevronLeft className="h-4 w-4 mr-1" />
-        Back to Users
+        <span className="hidden sm:inline">Back to Users</span>
+        <span className="sm:hidden">Back</span>
       </Button>
 
       {/* Page Header */}
-      <div className="flex items-start justify-between mb-8">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6 sm:mb-8">
         <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-semibold">{user.name || 'Unnamed User'}</h1>
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-semibold">{user.name || 'Unnamed User'}</h1>
             <Badge
               variant="outline"
               className={
@@ -166,43 +169,46 @@ export function UserDetail({
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           <Button
             variant="outline"
             onClick={handleToggleStatus}
             disabled={isUpdating}
-            className={
+            size="sm"
+            className={`flex-1 sm:flex-none ${
               isActive
                 ? 'border-red-200 text-red-700 hover:bg-red-50'
                 : 'border-green-200 text-green-700 hover:bg-green-50'
-            }
+            }`}
           >
             {isUpdating ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 sm:mr-2 animate-spin" />
             ) : isActive ? (
-              <UserX className="h-4 w-4 mr-2" />
+              <UserX className="h-4 w-4 sm:mr-2" />
             ) : (
-              <UserCheck className="h-4 w-4 mr-2" />
+              <UserCheck className="h-4 w-4 sm:mr-2" />
             )}
-            {isActive ? 'Deactivate User' : 'Activate User'}
+            <span className="hidden sm:inline">{isActive ? 'Deactivate User' : 'Activate User'}</span>
+            <span className="sm:hidden">{isActive ? 'Deactivate' : 'Activate'}</span>
           </Button>
-          <Button onClick={onEdit}>
-            <Edit className="h-4 w-4 mr-2" />
-            Edit User
+          <Button onClick={onEdit} size="sm" className="flex-1 sm:flex-none">
+            <Edit className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Edit User</span>
+            <span className="sm:hidden">Edit</span>
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column - 2/3 width */}
-        <div className="col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* User Information Card */}
           <Card className="border-primary/20">
             <CardHeader>
               <CardTitle>User Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 <div className="space-y-4">
                   <div className="flex items-start gap-3">
                     <Mail className="h-5 w-5 text-muted-foreground mt-0.5" />

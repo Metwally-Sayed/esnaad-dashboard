@@ -105,12 +105,12 @@ export function RequestDetail({
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-bold">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="text-xl sm:text-2xl font-bold">
               {request.type === "GUEST_VISIT"
                 ? "Guest Visit Invitation"
                 : request.type === "WORK_PERMISSION"
@@ -130,16 +130,17 @@ export function RequestDetail({
         </div>
 
         {/* Actions */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {request.pdfUrl && (
-            <Button asChild variant="outline">
+            <Button asChild variant="outline" size="sm" className="flex-1 sm:flex-none">
               <a
                 href={request.pdfUrl}
                 target="_blank"
                 rel="noopener noreferrer"
               >
                 <Download className="mr-2 h-4 w-4" />
-                Download PDF
+                <span className="hidden sm:inline">Download PDF</span>
+                <span className="sm:hidden">PDF</span>
               </a>
             </Button>
           )}
@@ -147,7 +148,10 @@ export function RequestDetail({
           {isOwner && request.status === "SUBMITTED" && (
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline">Cancel Request</Button>
+                <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+                  <span className="hidden sm:inline">Cancel Request</span>
+                  <span className="sm:hidden">Cancel</span>
+                </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -168,21 +172,21 @@ export function RequestDetail({
 
           {isAdmin && request.status === "SUBMITTED" && (
             <>
-              <Button onClick={onReject} variant="outline">
+              <Button onClick={onReject} variant="outline" size="sm" className="flex-1 sm:flex-none">
                 <XCircle className="mr-2 h-4 w-4" />
-                Reject
+                <span className="hidden sm:inline">Reject</span>
               </Button>
-              <Button onClick={onApprove}>
+              <Button onClick={onApprove} size="sm" className="flex-1 sm:flex-none">
                 <CheckCircle className="mr-2 h-4 w-4" />
-                Approve
+                <span className="hidden sm:inline">Approve</span>
               </Button>
             </>
           )}
 
           {isAdmin && request.status === "APPROVED" && (
-            <Button onClick={onRevoke} variant="outline">
+            <Button onClick={onRevoke} variant="outline" size="sm" className="flex-1 sm:flex-none">
               <Ban className="mr-2 h-4 w-4" />
-              Revoke
+              <span className="hidden sm:inline">Revoke</span>
             </Button>
           )}
         </div>

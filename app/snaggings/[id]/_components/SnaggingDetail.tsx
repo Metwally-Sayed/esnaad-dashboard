@@ -109,9 +109,9 @@ export function SnaggingDetail({
   };
 
   return (
-    <div className="max-w-[1440px] mx-auto">
+    <div className="max-w-[1440px] mx-auto p-4 sm:p-6 lg:p-8">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <Button
           variant="ghost"
           size="sm"
@@ -119,30 +119,31 @@ export function SnaggingDetail({
           className="mb-4 -ml-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Snaggings
+          <span className="hidden sm:inline">Back to Snaggings</span>
+          <span className="sm:hidden">Back</span>
         </Button>
 
-        <div className="bg-gradient-to-r from-background to-muted/30 rounded-xl border p-6">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-start gap-4">
+        <div className="bg-gradient-to-r from-background to-muted/30 rounded-xl border p-4 sm:p-6">
+          <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
+            <div className="flex items-start gap-3 sm:gap-4 w-full">
               {/* Icon */}
-              <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <FileText className="h-7 w-7 text-primary" />
+              <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <FileText className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
               </div>
 
               {/* Content */}
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3 flex-1 min-w-0">
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">
+                  <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
                     {snagging.title}
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                     ID: {snagging.id}
                   </p>
                 </div>
 
                 {/* Key Details */}
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+                <div className="flex flex-wrap items-center gap-x-4 sm:gap-x-6 gap-y-2 text-xs sm:text-sm">
                   {snagging.unit && (
                     <div className="flex items-center gap-2">
                       <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -175,11 +176,11 @@ export function SnaggingDetail({
             </div>
 
             {/* Status Badges */}
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex sm:flex-col items-start sm:items-end gap-2 w-full sm:w-auto">
               {/* Workflow Status */}
               <Badge
                 variant="outline"
-                className={`text-sm px-3 py-1.5 ${
+                className={`text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 ${
                   snagging.status === 'DRAFT'
                     ? 'text-gray-700 border-gray-300 bg-gray-50'
                     : snagging.status === 'SENT_TO_OWNER'
@@ -199,13 +200,13 @@ export function SnaggingDetail({
               {snagging.pdfUrl ? (
                 <Badge
                   variant="outline"
-                  className="text-sm px-3 py-1.5 text-green-700 border-green-300 bg-green-50"
+                  className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5 text-green-700 border-green-300 bg-green-50"
                 >
-                  <CheckCircle className="h-4 w-4 mr-1" />
+                  <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                   PDF Ready
                 </Badge>
               ) : (
-                <Badge variant="secondary" className="text-sm px-3 py-1.5">
+                <Badge variant="secondary" className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5">
                   PDF Pending
                 </Badge>
               )}
@@ -214,9 +215,9 @@ export function SnaggingDetail({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Description Card */}
           <Card className="overflow-hidden">
             <CardHeader className="bg-muted/30 pb-4">
@@ -303,7 +304,7 @@ export function SnaggingDetail({
 
                       {/* Item Images */}
                       {item.images && item.images.length > 0 && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           {item.images.map((image, imageIndex) => (
                             <div key={image.id} className="space-y-3">
                               <div className="relative aspect-video rounded-lg border overflow-hidden bg-muted group">
@@ -425,7 +426,7 @@ export function SnaggingDetail({
         </div>
 
         {/* Sidebar */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Actions Card */}
           <Card className="overflow-hidden">
             <CardHeader className="bg-muted/30 pb-4">
