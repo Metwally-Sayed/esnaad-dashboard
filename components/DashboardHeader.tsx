@@ -1,10 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Bell, ChevronDown, User, Settings, LogOut, Shield } from 'lucide-react';
+import { Search, ChevronDown, User, Settings, LogOut, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
+import { NotificationBell } from './NotificationBell';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -68,10 +69,9 @@ export function DashboardHeader() {
       {/* Right section - Responsive spacing */}
       <div className="flex items-center gap-2 md:gap-3 lg:gap-4">
         {/* Notifications - Hide on smallest screens */}
-        <Button variant="ghost" size="icon" className="relative hidden sm:inline-flex">
-          <Bell className="h-4 w-4 md:h-5 md:w-5" />
-          <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 md:h-2 md:w-2 bg-destructive rounded-full"></span>
-        </Button>
+        <div className="hidden sm:inline-flex">
+          <NotificationBell />
+        </div>
 
         {/* User Menu - Responsive */}
         <DropdownMenu>

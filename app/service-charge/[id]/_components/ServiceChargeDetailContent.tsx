@@ -206,9 +206,15 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
               </p>
             </div>
             <div>
-              <Label className="text-muted-foreground">Percentage</Label>
+              <Label className="text-muted-foreground">
+                {serviceCharge.percentage !== null ? 'Percentage' : 'Charge Type'}
+              </Label>
               <p className="font-semibold mt-1">
-                {parseFloat(serviceCharge.percentage.toString()).toFixed(2)}%
+                {serviceCharge.percentage !== null ? (
+                  `${parseFloat(serviceCharge.percentage.toString()).toFixed(2)}%`
+                ) : (
+                  <Badge variant="secondary">Per-Unit Fixed Amount</Badge>
+                )}
               </p>
             </div>
             <div>

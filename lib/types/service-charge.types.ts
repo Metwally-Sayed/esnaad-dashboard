@@ -12,7 +12,7 @@ export interface ProjectServiceCharge {
   year: number
   quarter: number | null
   periodType: ServiceChargePeriodType
-  percentage: number
+  percentage: number | null // Nullable for per-unit charges
   dueDate: string | null
   createdAt: string
   updatedAt: string
@@ -27,6 +27,23 @@ export interface ProjectServiceCharge {
     email: string
     name: string | null
   }
+  unitCharges?: Array<{
+    id: string
+    unitId: string
+    amount: number
+    isOverridden: boolean
+    overriddenAmount: number | null
+    unit: {
+      id: string
+      unitNumber: string
+      buildingName: string | null
+      owner: {
+        id: string
+        email: string
+        name: string | null
+      } | null
+    }
+  }>
   _count?: {
     unitCharges: number
   }
@@ -64,7 +81,7 @@ export interface UnitServiceCharge {
     year: number
     quarter: number | null
     periodType: ServiceChargePeriodType
-    percentage: number
+    percentage: number | null // Nullable for per-unit charges
     dueDate: string | null
     project?: {
       id: string
@@ -80,12 +97,19 @@ export interface UnitServiceCharge {
 }
 
 // DTOs for creating/updating
+export interface UnitChargeInput {
+  unitId: string
+  amount: number
+}
+
 export interface CreateProjectServiceChargeDto {
   projectId: string
   year: number
   quarter?: number
   periodType: ServiceChargePeriodType
-  percentage: number
+  // Either percentage (old method) or unitCharges (new method)
+  percentage?: number
+  unitCharges?: UnitChargeInput[]
   dueDate?: string
 }
 
@@ -96,6 +120,27 @@ export interface UpdateProjectServiceChargeDto {
 
 export interface OverrideUnitServiceChargeDto {
   overriddenAmount: number
+}
+
+// Unit for service charge selection
+export interface UnitForServiceCharge {
+  id: string
+  unitNumber: string
+  buildingName: string | null
+  floor: number | null
+  area: number | null
+  price: number | null
+  projectId: string | null
+  project: {
+    id: string
+    name: string
+    location: string | null
+  } | null
+  owner: {
+    id: string
+    email: string
+    name: string | null
+  } | null
 }
 
 // Filters
@@ -160,4 +205,9 @@ export interface DownloadUrlResponse {
   data: {
     url: string
   }
+}
+
+export interface UnitsForProjectResponse {
+  success: boolean
+  data: UnitForServiceCharge[]
 }

@@ -261,66 +261,120 @@ export function ServiceChargeContent() {
                 <TableRow>
                   <TableHead className="min-w-[200px]">Project</TableHead>
                   <TableHead className="hidden md:table-cell min-w-[120px]">Period</TableHead>
-                  <TableHead className="min-w-[100px]">Percentage</TableHead>
-                  <TableHead className="hidden sm:table-cell min-w-[100px]">Units</TableHead>
-                  <TableHead className="hidden lg:table-cell min-w-[100px]">Due Date</TableHead>
+                  <TableHead className="min-w-[100px]">Type</TableHead>
+                  <TableHead className="hidden sm:table-cell min-w-[150px]">Units</TableHead>
+                  <TableHead className="min-w-[120px]">Total Amount</TableHead>
+                  <TableHead className="hidden md:table-cell min-w-[120px]">Due Date</TableHead>
                   <TableHead className="hidden lg:table-cell min-w-[120px]">Created</TableHead>
                   <TableHead className="text-right min-w-[100px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {serviceCharges.map((charge) => (
-                  <TableRow key={charge.id}>
-                    <TableCell className="font-medium">
-                      <div>
-                        <div className="font-semibold">{charge.project?.name || 'N/A'}</div>
-                        {charge.project?.location && (
-                          <div className="text-xs text-muted-foreground">{charge.project.location}</div>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      <Badge variant="outline">
-                        {getPeriodLabel(charge.year, charge.quarter, charge.periodType)}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">
-                        {parseFloat(charge.percentage.toString()).toFixed(2)}%
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <Badge variant="secondary">
-                        {charge._count?.unitCharges || 0} units
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      {charge.dueDate
-                        ? new Date(charge.dueDate).toLocaleDateString('en-US')
-                        : 'Not set'}
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell">
-                      <div className="text-sm">
-                        {new Date(charge.createdAt).toLocaleDateString('en-US')}
-                      </div>
-                      {charge.createdBy && (
-                        <div className="text-xs text-muted-foreground">
-                          by {charge.createdBy.name || charge.createdBy.email}
+                {serviceCharges.map((charge) => {
+                  const totalAmount = charge.unitCharges?.reduce((sum, uc) => {
+                    const amount = uc.isOverridden && uc.overriddenAmount
+                      ? parseFloat(uc.overriddenAmount.toString())
+                      : parseFloat(uc.amount.toString())
+                    return sum + amount
+                  }, 0) || 0
+
+                  return (
+                    <TableRow key={charge.id}>
+                      <TableCell className="font-medium">
+                        <div>
+                          <div className="font-semibold">{charge.project?.name || 'N/A'}</div>
+                          {charge.project?.location && (
+                            <div className="text-xs text-muted-foreground">{charge.project.location}</div>
+                          )}
                         </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => router.push(`/service-charge/${charge.id}`)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" />
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <Badge variant="outline">
+                          {getPeriodLabel(charge.year, charge.quarter, charge.periodType)}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {charge.percentage !== null ? (
+                          <div className="font-medium">
+                            {parseFloat(charge.percentage.toString()).toFixed(2)}%
+                          </div>
+                        ) : (
+                          <Badge variant="secondary">Per-Unit</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden sm:table-cell">
+                        <div className="text-sm">
+                          {charge.unitCharges && charge.unitCharges.length > 0 ? (
+                            <div className="space-y-1">
+                              {charge.unitCharges.slice(0, 2).map((uc) => (
+                                <div key={uc.id} className="flex items-center gap-2">
+                                  <span className="font-medium">{uc.unit.unitNumber}</span>
+                                  <span className="text-xs text-muted-foreground">
+                                    ({parseFloat(uc.amount.toString()).toLocaleString()} SAR)
+                                  </span>
+                                </div>
+                              ))}
+                              {charge.unitCharges.length > 2 && (
+                                <div className="text-xs text-muted-foreground">
+                                  +{charge.unitCharges.length - 2} more
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground">No units</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-semibold">
+                          {totalAmount.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{' '}
+                          SAR
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {charge._count?.unitCharges || 0} unit{(charge._count?.unitCharges || 0) !== 1 ? 's' : ''}
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {charge.dueDate ? (
+                          <div>
+                            <div className="font-medium">
+                              {new Date(charge.dueDate).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              })}
+                            </div>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">Not set</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell">
+                        <div className="text-sm">
+                          {new Date(charge.createdAt).toLocaleDateString('en-US')}
+                        </div>
+                        {charge.createdBy && (
+                          <div className="text-xs text-muted-foreground">
+                            by {charge.createdBy.name || charge.createdBy.email}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => router.push(`/service-charge/${charge.id}`)}
+                        >
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
               </TableBody>
             </Table>
           </div>
@@ -504,8 +558,8 @@ export function ServiceChargeContent() {
                 <TableHead className="min-w-[120px]">Unit</TableHead>
                 <TableHead className="hidden sm:table-cell min-w-[100px]">Building</TableHead>
                 <TableHead className="hidden md:table-cell min-w-[120px]">Period</TableHead>
-                <TableHead className="min-w-[100px]">Amount (AED)</TableHead>
-                <TableHead className="hidden lg:table-cell min-w-[100px]">Due Date</TableHead>
+                <TableHead className="min-w-[100px]">Amount (SAR)</TableHead>
+                <TableHead className="hidden lg:table-cell min-w-[120px]">Due Date</TableHead>
                 <TableHead className="text-right min-w-[100px]">PDF</TableHead>
               </TableRow>
             </TableHeader>
@@ -546,9 +600,17 @@ export function ServiceChargeContent() {
                       )}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
-                      {charge.projectServiceCharge?.dueDate
-                        ? new Date(charge.projectServiceCharge.dueDate).toLocaleDateString('en-US')
-                        : 'N/A'}
+                      {charge.projectServiceCharge?.dueDate ? (
+                        <div className="font-medium">
+                          {new Date(charge.projectServiceCharge.dueDate).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">Not set</span>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       {charge.pdfUrl ? (

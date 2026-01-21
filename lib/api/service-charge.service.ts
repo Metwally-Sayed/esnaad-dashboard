@@ -10,6 +10,7 @@ import {
   OverrideUnitServiceChargeDto,
   ProjectServiceChargeFilters,
   UnitServiceChargeFilters,
+  UnitsForProjectResponse,
 } from '../types/service-charge.types'
 
 class ServiceChargeService {
@@ -114,6 +115,22 @@ class ServiceChargeService {
    */
   async generatePdfStatement(id: string): Promise<DownloadUrlResponse> {
     const response = await api.post(`/admin/unit-service-charges/${id}/generate-pdf`, {})
+    return response.data
+  }
+
+  /**
+   * Get units for a project (for service charge creation)
+   */
+  async getUnitsForProject(projectId: string): Promise<UnitsForProjectResponse> {
+    const response = await api.get(`/admin/projects/${projectId}/units`)
+    return response.data
+  }
+
+  /**
+   * Get all units from all projects (for service charge creation)
+   */
+  async getAllUnitsForServiceCharge(): Promise<UnitsForProjectResponse> {
+    const response = await api.get(`/admin/units/all`)
     return response.data
   }
 

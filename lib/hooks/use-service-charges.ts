@@ -91,6 +91,40 @@ export function useOwnerServiceCharges(filters?: UnitServiceChargeFilters | null
 }
 
 /**
+ * Hook to fetch units for a project (for service charge creation)
+ */
+export function useUnitsForProject(projectId: string | null) {
+  const { data, error, isLoading } = useSWR(
+    projectId ? ['units-for-project', projectId] : null,
+    () => (projectId ? serviceChargeService.getUnitsForProject(projectId) : null),
+    { revalidateOnFocus: false }
+  )
+
+  return {
+    units: data?.data ?? [],
+    isLoading,
+    error,
+  }
+}
+
+/**
+ * Hook to fetch all units from all projects (for service charge creation)
+ */
+export function useAllUnitsForServiceCharge() {
+  const { data, error, isLoading } = useSWR(
+    'all-units-for-service-charge',
+    () => serviceChargeService.getAllUnitsForServiceCharge(),
+    { revalidateOnFocus: false }
+  )
+
+  return {
+    units: data?.data ?? [],
+    isLoading,
+    error,
+  }
+}
+
+/**
  * Mutations for project service charges (Admin only)
  */
 export function useProjectServiceChargeMutations() {
