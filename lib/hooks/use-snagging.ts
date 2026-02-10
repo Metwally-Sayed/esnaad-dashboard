@@ -12,7 +12,7 @@ import {
   CreateSnaggingDto,
   SnaggingFilters,
   Snagging,
-  UpdateOwnerSignatureDto,
+  UpdateSignatureDto,
 } from '@/lib/types/snagging.types'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
@@ -220,7 +220,7 @@ export function useDeleteSnagging() {
 export function useUpdateOwnerSignature(snaggingId: string) {
   const { trigger, isMutating } = useSWRMutation(
     ['update-owner-signature', snaggingId],
-    async (_key, { arg }: { arg: UpdateOwnerSignatureDto }) => {
+    async (_key, { arg }: { arg: UpdateSignatureDto }) => {
       const result = await snaggingService.updateOwnerSignature(snaggingId, arg)
 
       // Revalidate snagging detail

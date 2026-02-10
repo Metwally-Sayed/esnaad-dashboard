@@ -5,11 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
-import { FileText, Download, CheckCircle, Clock, AlertCircle, Loader2, ListChecks } from "lucide-react"
+import { Separator } from "@/components/ui/separator"
+import { FileText, Download, CheckCircle, Clock, AlertCircle, Loader2, ListChecks, Pen } from "lucide-react"
 import { unitsService } from "@/lib/api/units.service"
 import { handoverService } from "@/lib/api/handover.service"
 import { HandoverStatusBadge } from "./HandoverStatusBadge"
-import { useHandover } from "@/lib/hooks/use-handovers"
+import { SignatureCaptureDialog } from "@/components/signature/SignatureCaptureDialog"
+import { useHandover, useHandoverMutations } from "@/lib/hooks/use-handovers"
 import { HandoverStatus } from "@/lib/types/handover.types"
 import { toast } from "sonner"
 
@@ -21,6 +23,8 @@ interface UnitHandoverWidgetProps {
 export function UnitHandoverWidget({ unitId, unitName }: UnitHandoverWidgetProps) {
   const [loading, setLoading] = useState(true)
   const [accepting, setAccepting] = useState(false)
+  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false)
+  const { updateOwnerSignature } = useHandoverMutations()
   const [handoverData, setHandoverData] = useState<{
     exists: boolean
     handover?: {
@@ -72,6 +76,21 @@ export function UnitHandoverWidget({ unitId, unitName }: UnitHandoverWidgetProps
     return acc
   }, {} as Record<string, typeof fullHandover.items>) || {}
 
+  // Handle owner signature
+  const handleOwnerSignature = async (signatureUrl: string) => {
+    if (!handoverData?.handover?.id) return
+
+    try {
+      await updateOwnerSignature(handoverData.handover.id, signatureUrl)
+      // Refresh handover status to get updated signature
+      await fetchHandoverStatus()
+    } catch (err: any) {
+      console.error("Error saving signature:", err)
+      // Error toast is already shown by the service/hook
+      throw err // Re-throw so the dialog knows it failed
+    }
+  }
+
   // Handle accept handover
   const handleAcceptHandover = async () => {
     if (!handoverData?.handover?.id) return
@@ -91,6 +110,11 @@ export function UnitHandoverWidget({ unitId, unitName }: UnitHandoverWidgetProps
       setAccepting(false)
     }
   }
+
+  // Check signature status
+  const hasAdminSignature = !!fullHandover?.adminSignatureUrl
+  const hasOwnerSignature = !!fullHandover?.ownerSignatureUrl
+  const bothSignaturesPresent = hasAdminSignature && hasOwnerSignature
 
   // Handle download PDF
   const handleDownloadPDF = () => {
@@ -257,18 +281,99 @@ export function UnitHandoverWidget({ unitId, unitName }: UnitHandoverWidgetProps
           </div>
         )}
 
-        {/* SENT_TO_OWNER - Show Accept Button */}
+        {/* SENT_TO_OWNER - Show Signatures and Accept Button */}
         {handover?.status === "SENT_TO_OWNER" && (
           <div className="space-y-4 pt-2">
-            <Alert>
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                The handover is ready for your acceptance. Please review all details carefully before accepting.
-              </AlertDescription>
-            </Alert>
+            {/* Signature Status Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Pen className="h-4 w-4" />
+                <span className="text-sm font-medium">Signatures Required</span>
+              </div>
+
+              {/* Admin Signature Status */}
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm">Admin Signature</span>
+                {hasAdminSignature ? (
+                  <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Signed
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-muted-foreground">
+                    <Clock className="h-3 w-3 mr-1" />
+                    Pending
+                  </Badge>
+                )}
+              </div>
+
+              {/* Owner Signature Status & Action */}
+              <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <span className="text-sm">Your Signature</span>
+                {hasOwnerSignature ? (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Signed
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSignatureDialogOpen(true)}
+                    >
+                      Update
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSignatureDialogOpen(true)}
+                  >
+                    <Pen className="h-3 w-3 mr-1" />
+                    Add Signature
+                  </Button>
+                )}
+              </div>
+
+              {/* Show owner signature preview if present */}
+              {fullHandover?.ownerSignatureUrl && (
+                <div className="p-3 bg-muted/30 rounded-lg border">
+                  <img
+                    src={fullHandover.ownerSignatureUrl}
+                    alt="Your signature"
+                    className="max-h-12 mx-auto"
+                  />
+                </div>
+              )}
+            </div>
+
+            <Separator />
+
+            {/* Acceptance Section */}
+            {!bothSignaturesPresent && (
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>
+                  {!hasOwnerSignature
+                    ? "Please add your signature before accepting the handover."
+                    : "Waiting for admin signature before you can accept."}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {bothSignaturesPresent && (
+              <Alert className="bg-green-50 border-green-200 dark:bg-green-950/20 dark:border-green-900">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                <AlertDescription className="text-green-800 dark:text-green-200">
+                  Both signatures are complete. You can now accept the handover.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Button
               onClick={handleAcceptHandover}
-              disabled={accepting}
+              disabled={accepting || !bothSignaturesPresent}
               className="w-full"
               size="lg"
             >
@@ -286,6 +391,16 @@ export function UnitHandoverWidget({ unitId, unitName }: UnitHandoverWidgetProps
             </Button>
           </div>
         )}
+
+        {/* Owner Signature Dialog */}
+        <SignatureCaptureDialog
+          open={signatureDialogOpen}
+          onOpenChange={setSignatureDialogOpen}
+          title="Your Signature"
+          description="Draw your signature or upload an image. This will be included in the handover agreement PDF."
+          currentSignatureUrl={fullHandover?.ownerSignatureUrl}
+          onSignatureCapture={handleOwnerSignature}
+        />
 
         {/* ACCEPTED - Show PDF Download */}
         {handover?.status === "ACCEPTED" && handover.pdfUrl && (

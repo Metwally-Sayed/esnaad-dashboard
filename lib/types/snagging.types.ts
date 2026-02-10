@@ -44,6 +44,13 @@ export interface Snagging {
   acceptedAt?: string | null
   pdfUrl?: string | null
   pdfPublicId?: string | null
+
+  // E-Signature fields
+  adminSignatureUrl?: string | null
+  ownerSignatureUrl?: string | null
+  adminSignedAt?: string | null
+  ownerSignedAt?: string | null
+
   createdAt: string
   updatedAt: string
   unit?: {
@@ -96,8 +103,8 @@ export interface CreateSnaggingDto {
   }>
 }
 
-export interface UpdateOwnerSignatureDto {
-  ownerSignatureUrl: string
+export interface UpdateSignatureDto {
+  signatureUrl: string
 }
 
 // Filter Types

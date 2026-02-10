@@ -259,24 +259,30 @@ export function ServiceChargeContent() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="min-w-[200px]">Project</TableHead>
-                  <TableHead className="hidden md:table-cell min-w-[120px]">Period</TableHead>
-                  <TableHead className="min-w-[100px]">Type</TableHead>
-                  <TableHead className="hidden sm:table-cell min-w-[150px]">Units</TableHead>
-                  <TableHead className="min-w-[120px]">Total Amount</TableHead>
-                  <TableHead className="hidden md:table-cell min-w-[120px]">Due Date</TableHead>
-                  <TableHead className="hidden lg:table-cell min-w-[120px]">Created</TableHead>
-                  <TableHead className="text-right min-w-[100px]">Actions</TableHead>
+                  <TableHead className="min-w-[180px]">Project</TableHead>
+                  <TableHead className="hidden md:table-cell min-w-[100px]">Period</TableHead>
+                  <TableHead className="hidden sm:table-cell min-w-[120px]">Units</TableHead>
+                  <TableHead className="min-w-[100px]">Amount</TableHead>
+                  <TableHead className="hidden sm:table-cell min-w-[80px]">Paid</TableHead>
+                  <TableHead className="min-w-[80px]">Balance</TableHead>
+                  <TableHead className="hidden lg:table-cell min-w-[100px]">Due Date</TableHead>
+                  <TableHead className="text-right min-w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {serviceCharges.map((charge) => {
-                  const totalAmount = charge.unitCharges?.reduce((sum, uc) => {
+                  const totalAmount = charge.unitCharges?.reduce((sum, uc: any) => {
                     const amount = uc.isOverridden && uc.overriddenAmount
                       ? parseFloat(uc.overriddenAmount.toString())
                       : parseFloat(uc.amount.toString())
                     return sum + amount
                   }, 0) || 0
+
+                  const totalPaid = charge.unitCharges?.reduce((sum, uc: any) => {
+                    return sum + parseFloat((uc.paidAmount || 0).toString())
+                  }, 0) || 0
+
+                  const totalBalance = Math.max(0, totalAmount - totalPaid)
 
                   return (
                     <TableRow key={charge.id}>
@@ -293,25 +299,13 @@ export function ServiceChargeContent() {
                           {getPeriodLabel(charge.year, charge.quarter, charge.periodType)}
                         </Badge>
                       </TableCell>
-                      <TableCell>
-                        {charge.percentage !== null ? (
-                          <div className="font-medium">
-                            {parseFloat(charge.percentage.toString()).toFixed(2)}%
-                          </div>
-                        ) : (
-                          <Badge variant="secondary">Per-Unit</Badge>
-                        )}
-                      </TableCell>
                       <TableCell className="hidden sm:table-cell">
                         <div className="text-sm">
                           {charge.unitCharges && charge.unitCharges.length > 0 ? (
                             <div className="space-y-1">
                               {charge.unitCharges.slice(0, 2).map((uc) => (
-                                <div key={uc.id} className="flex items-center gap-2">
-                                  <span className="font-medium">{uc.unit.unitNumber}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    ({parseFloat(uc.amount.toString()).toLocaleString()} SAR)
-                                  </span>
+                                <div key={uc.id} className="font-medium">
+                                  {uc.unit.unitNumber}
                                 </div>
                               ))}
                               {charge.unitCharges.length > 2 && (
@@ -330,36 +324,39 @@ export function ServiceChargeContent() {
                           {totalAmount.toLocaleString('en-US', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
-                          })}{' '}
-                          SAR
+                          })}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           {charge._count?.unitCharges || 0} unit{(charge._count?.unitCharges || 0) !== 1 ? 's' : ''}
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        {charge.dueDate ? (
-                          <div>
-                            <div className="font-medium">
-                              {new Date(charge.dueDate).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              })}
-                            </div>
-                          </div>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">Not set</span>
-                        )}
+                      <TableCell className="hidden sm:table-cell">
+                        <div className="text-green-600">
+                          {totalPaid.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className={totalBalance > 0 ? 'text-amber-600 font-medium' : 'text-green-600'}>
+                          {totalBalance.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
-                        <div className="text-sm">
-                          {new Date(charge.createdAt).toLocaleDateString('en-US')}
-                        </div>
-                        {charge.createdBy && (
-                          <div className="text-xs text-muted-foreground">
-                            by {charge.createdBy.name || charge.createdBy.email}
+                        {charge.dueDate ? (
+                          <div className="text-sm">
+                            {new Date(charge.dueDate).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric',
+                            })}
                           </div>
+                        ) : (
+                          <span className="text-muted-foreground text-sm">-</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
@@ -557,15 +554,19 @@ export function ServiceChargeContent() {
               <TableRow>
                 <TableHead className="min-w-[120px]">Unit</TableHead>
                 <TableHead className="hidden sm:table-cell min-w-[100px]">Building</TableHead>
-                <TableHead className="hidden md:table-cell min-w-[120px]">Period</TableHead>
-                <TableHead className="min-w-[100px]">Amount (SAR)</TableHead>
-                <TableHead className="hidden lg:table-cell min-w-[120px]">Due Date</TableHead>
-                <TableHead className="text-right min-w-[100px]">PDF</TableHead>
+                <TableHead className="hidden md:table-cell min-w-[100px]">Period</TableHead>
+                <TableHead className="min-w-[100px]">Amount</TableHead>
+                <TableHead className="hidden sm:table-cell min-w-[80px]">Paid</TableHead>
+                <TableHead className="min-w-[80px]">Balance</TableHead>
+                <TableHead className="hidden lg:table-cell min-w-[100px]">Due Date</TableHead>
+                <TableHead className="text-right min-w-[80px]">PDF</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {serviceCharges.map((charge) => {
                 const finalAmount = getFinalAmount(charge)
+                const paidAmount = charge.paidAmount || 0
+                const balance = Math.max(0, parseFloat(finalAmount.toString()) - parseFloat(paidAmount.toString()))
                 return (
                   <TableRow key={charge.id}>
                     <TableCell className="font-medium">
@@ -590,18 +591,26 @@ export function ServiceChargeContent() {
                           maximumFractionDigits: 2,
                         })}
                       </div>
-                      {charge.isOverridden && (
-                        <div className="text-xs text-muted-foreground">
-                          Original: {parseFloat(charge.amount.toString()).toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })}
-                        </div>
-                      )}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <div className="text-green-600">
+                        {parseFloat(paidAmount.toString()).toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className={balance > 0 ? 'text-amber-600 font-medium' : 'text-green-600'}>
+                        {balance.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       {charge.projectServiceCharge?.dueDate ? (
-                        <div className="font-medium">
+                        <div className="text-sm">
                           {new Date(charge.projectServiceCharge.dueDate).toLocaleDateString('en-US', {
                             month: 'short',
                             day: 'numeric',
@@ -609,7 +618,7 @@ export function ServiceChargeContent() {
                           })}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground text-sm">Not set</span>
+                        <span className="text-muted-foreground text-sm">-</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right">
@@ -619,11 +628,10 @@ export function ServiceChargeContent() {
                           size="sm"
                           onClick={() => handleDownloadPdf(charge.id, charge.unit?.unitNumber || 'N/A')}
                         >
-                          <Download className="h-4 w-4 mr-1" />
-                          Download PDF
+                          <Download className="h-4 w-4" />
                         </Button>
                       ) : (
-                        <span className="text-xs text-muted-foreground">No PDF</span>
+                        <span className="text-xs text-muted-foreground">-</span>
                       )}
                     </TableCell>
                   </TableRow>

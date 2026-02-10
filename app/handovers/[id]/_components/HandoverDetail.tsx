@@ -23,9 +23,12 @@ import {
   Download,
   Edit,
   AlertCircle,
-  Eye
+  Eye,
+  Pen,
+  RefreshCw
 } from 'lucide-react'
 import { useHandover, useHandoverMutations } from '@/lib/hooks/use-handovers'
+import { SignatureCaptureDialog } from '@/components/signature/SignatureCaptureDialog'
 import { useAuth } from '@/contexts/AuthContext'
 import { HandoverStatusBadge } from '@/components/handover/HandoverStatusBadge'
 import { MessageThread } from '@/components/handover/MessageThread'
@@ -82,12 +85,19 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
   const {
     sendToOwner,
     cancelHandover,
+    updateAdminSignature,
+    updateOwnerSignature,
+    regeneratePdf,
+    ownerConfirm,
     isLoading: isMutating
   } = useHandoverMutations()
 
   // Dialog states (simplified workflow)
   const [sendDialog, setSendDialog] = useState(false)
   const [cancelDialog, setCancelDialog] = useState(false)
+  const [acceptDialog, setAcceptDialog] = useState(false)
+  const [adminSignatureDialog, setAdminSignatureDialog] = useState(false)
+  const [ownerSignatureDialog, setOwnerSignatureDialog] = useState(false)
 
   const [sendMessage, setSendMessage] = useState('')
   const [cancelReason, setCancelReason] = useState('')
@@ -147,6 +157,44 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
     setCancelReason('')
     mutate()
   }
+
+  const handleAccept = async () => {
+    await ownerConfirm(id)
+    setAcceptDialog(false)
+    mutate()
+  }
+
+  // Signature handlers
+  const handleAdminSignature = async (signatureUrl: string) => {
+    await updateAdminSignature(id, signatureUrl)
+    mutate()
+  }
+
+  const handleOwnerSignature = async (signatureUrl: string) => {
+    await updateOwnerSignature(id, signatureUrl)
+    mutate()
+  }
+
+  const handleRegeneratePdf = async () => {
+    await regeneratePdf(id)
+    mutate()
+  }
+
+  // Check if user can sign
+  const canAdminSign = isAdmin && (handover.status === HandoverStatus.DRAFT || handover.status === HandoverStatus.SENT_TO_OWNER)
+  const canOwnerSign = !isAdmin && handover.status === HandoverStatus.SENT_TO_OWNER && handover.ownerId === user?.id
+  const bothSignaturesPresent = !!handover.adminSignatureUrl && !!handover.ownerSignatureUrl
+
+  // Debug logging for signature permissions
+  console.log('Signature permissions debug:', {
+    isAdmin,
+    handoverStatus: handover.status,
+    handoverOwnerId: handover.ownerId,
+    userId: user?.id,
+    canAdminSign,
+    canOwnerSign,
+    ownerIdMatchesUserId: handover.ownerId === user?.id
+  })
 
   return (
     <div className="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
@@ -633,13 +681,24 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
               )}
 
               {allowedActions.includes('send') && (
-                <Button
-                  className="w-full"
-                  onClick={() => setSendDialog(true)}
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Send to Owner
-                </Button>
+                <>
+                  {!handover.adminSignatureUrl && (
+                    <Alert className="mb-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        Admin signature is required before sending to owner.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <Button
+                    className="w-full"
+                    onClick={() => setSendDialog(true)}
+                    disabled={!handover.adminSignatureUrl}
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Send to Owner
+                  </Button>
+                </>
               )}
 
 
@@ -654,6 +713,30 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
                 </Button>
               )}
 
+              {/* Owner Accept Button - shown when status is SENT_TO_OWNER */}
+              {!isAdmin && handover.status === HandoverStatus.SENT_TO_OWNER && (
+                <>
+                  {!bothSignaturesPresent && (
+                    <Alert className="mb-2">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-xs">
+                        {!handover.ownerSignatureUrl
+                          ? 'Please add your signature before accepting the handover.'
+                          : 'Waiting for admin signature.'}
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                  <Button
+                    className="w-full bg-green-600 hover:bg-green-700"
+                    onClick={() => setAcceptDialog(true)}
+                    disabled={isMutating || !bothSignaturesPresent}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Accept Handover
+                  </Button>
+                </>
+              )}
+
               {isAccepted && handover.pdfUrl && (
                 <Button
                   variant="outline"
@@ -663,6 +746,168 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
                   <Download className="h-4 w-4 mr-2" />
                   Download PDF Agreement
                 </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* E-Signatures Card */}
+          <Card className="overflow-hidden">
+            <CardHeader className="bg-muted/30 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Pen className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Signatures</CardTitle>
+                  <CardDescription className="text-xs mt-0.5">
+                    {bothSignaturesPresent ? 'Both parties signed' : 'Signatures required for acceptance'}
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-4">
+              {/* Signature requirement alert */}
+              {handover.status === HandoverStatus.SENT_TO_OWNER && !bothSignaturesPresent && (
+                <Alert>
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="text-xs">
+                    Both admin and owner signatures are required before the handover can be accepted.
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* Admin Signature */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Admin Signature
+                  </p>
+                  {handover.adminSignatureUrl ? (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Signed
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Pending
+                    </Badge>
+                  )}
+                </div>
+                {handover.adminSignatureUrl ? (
+                  <div className="p-3 bg-muted/50 rounded-lg border">
+                    <img
+                      src={handover.adminSignatureUrl}
+                      alt="Admin Signature"
+                      className="max-h-16 mx-auto"
+                    />
+                    {handover.adminSignedAt && (
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        Signed {format(new Date(handover.adminSignedAt), 'PPp')}
+                      </p>
+                    )}
+                    {canAdminSign && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => setAdminSignatureDialog(true)}
+                      >
+                        <Pen className="h-3 w-3 mr-1" />
+                        Update Signature
+                      </Button>
+                    )}
+                  </div>
+                ) : canAdminSign ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setAdminSignatureDialog(true)}
+                  >
+                    <Pen className="h-4 w-4 mr-2" />
+                    Add Admin Signature
+                  </Button>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-3 bg-muted/30 rounded-lg">
+                    Awaiting admin signature
+                  </p>
+                )}
+              </div>
+
+              <Separator />
+
+              {/* Owner Signature */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Owner Signature
+                  </p>
+                  {handover.ownerSignatureUrl ? (
+                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Signed
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">
+                      Pending
+                    </Badge>
+                  )}
+                </div>
+                {handover.ownerSignatureUrl ? (
+                  <div className="p-3 bg-muted/50 rounded-lg border">
+                    <img
+                      src={handover.ownerSignatureUrl}
+                      alt="Owner Signature"
+                      className="max-h-16 mx-auto"
+                    />
+                    {handover.ownerSignedAt && (
+                      <p className="text-xs text-muted-foreground text-center mt-2">
+                        Signed {format(new Date(handover.ownerSignedAt), 'PPp')}
+                      </p>
+                    )}
+                    {canOwnerSign && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="w-full mt-2"
+                        onClick={() => setOwnerSignatureDialog(true)}
+                      >
+                        <Pen className="h-3 w-3 mr-1" />
+                        Update Signature
+                      </Button>
+                    )}
+                  </div>
+                ) : canOwnerSign ? (
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setOwnerSignatureDialog(true)}
+                  >
+                    <Pen className="h-4 w-4 mr-2" />
+                    Add Your Signature
+                  </Button>
+                ) : (
+                  <p className="text-xs text-muted-foreground text-center py-3 bg-muted/30 rounded-lg">
+                    {handover.status === HandoverStatus.DRAFT
+                      ? 'Owner can sign after handover is sent'
+                      : 'Awaiting owner signature'}
+                  </p>
+                )}
+              </div>
+
+              {/* Regenerate PDF button for admin when both signatures are present */}
+              {isAdmin && bothSignaturesPresent && handover.status === HandoverStatus.SENT_TO_OWNER && (
+                <>
+                  <Separator />
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={handleRegeneratePdf}
+                    disabled={isMutating}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Regenerate PDF
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
@@ -846,6 +1091,50 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Admin Signature Dialog */}
+      <SignatureCaptureDialog
+        open={adminSignatureDialog}
+        onOpenChange={setAdminSignatureDialog}
+        title="Admin Signature"
+        description="Draw your signature or upload an image. This will be included in the handover agreement PDF."
+        currentSignatureUrl={handover.adminSignatureUrl}
+        onSignatureCapture={handleAdminSignature}
+      />
+
+      {/* Owner Signature Dialog */}
+      <SignatureCaptureDialog
+        open={ownerSignatureDialog}
+        onOpenChange={setOwnerSignatureDialog}
+        title="Your Signature"
+        description="Draw your signature or upload an image. This will be included in the handover agreement PDF."
+        currentSignatureUrl={handover.ownerSignatureUrl}
+        onSignatureCapture={handleOwnerSignature}
+      />
+
+      {/* Accept Handover Dialog */}
+      <AlertDialog open={acceptDialog} onOpenChange={setAcceptDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Accept Handover</AlertDialogTitle>
+            <AlertDialogDescription>
+              By accepting this handover, you confirm that you have reviewed all items
+              and agree to the terms of the handover agreement. A final PDF will be
+              generated with both signatures.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleAccept}
+              disabled={isMutating}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              Accept Handover
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

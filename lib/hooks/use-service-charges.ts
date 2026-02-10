@@ -4,6 +4,7 @@ import {
   ProjectServiceChargeFilters,
   UnitServiceChargeFilters,
   CreateProjectServiceChargeDto,
+  CreateSimpleServiceChargeDto,
   UpdateProjectServiceChargeDto,
   OverrideUnitServiceChargeDto,
 } from '@/lib/types/service-charge.types'
@@ -143,6 +144,18 @@ export function useProjectServiceChargeMutations() {
     }
   }
 
+  const createSimpleServiceCharge = async (data: CreateSimpleServiceChargeDto) => {
+    setIsCreating(true)
+    try {
+      const result = await serviceChargeService.createSimpleServiceCharge(data)
+      mutate((key) => Array.isArray(key) && key[0] === 'project-service-charges')
+      mutate((key) => Array.isArray(key) && key[0] === 'unit-service-charges')
+      return result
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const updateProjectServiceCharge = async (
     id: string,
     data: UpdateProjectServiceChargeDto
@@ -171,6 +184,7 @@ export function useProjectServiceChargeMutations() {
 
   return {
     createProjectServiceCharge,
+    createSimpleServiceCharge,
     updateProjectServiceCharge,
     deleteProjectServiceCharge,
     isCreating,

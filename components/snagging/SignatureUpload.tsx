@@ -67,7 +67,7 @@ export function SignatureUpload({
     try {
       setIsSubmitting(true);
       await snaggingService.updateOwnerSignature(snaggingId, {
-        ownerSignatureUrl: signatureUrl,
+        signatureUrl: signatureUrl,
       });
       toast.success("Signature updated and PDF regenerated");
       onSignatureUpdate?.();

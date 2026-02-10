@@ -476,6 +476,58 @@ export const handoverService = {
 
   async deleteAttachment(handoverId: string, attachmentId: string): Promise<void> {
     await axios.delete(`${API_BASE}/${handoverId}/attachments/${attachmentId}`)
+  },
+
+  // =============== E-Signature Methods ===============
+
+  // Update admin signature (Admin only - DRAFT or SENT_TO_OWNER)
+  async updateAdminSignature(id: string, data: { signatureUrl: string }): Promise<Handover> {
+    try {
+      const response = await axios.post<{ success: boolean; data: Handover }>(
+        `${API_BASE}/${id}/sign`,
+        data
+      )
+      return response.data.data
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error ||
+                          error.response?.data?.message ||
+                          'Failed to save admin signature'
+      toast.error(errorMessage)
+      throw error
+    }
+  },
+
+  // Update owner signature (Owner only - SENT_TO_OWNER)
+  async updateOwnerSignature(id: string, data: { signatureUrl: string }): Promise<Handover> {
+    try {
+      const response = await axios.post<{ success: boolean; data: Handover }>(
+        `${API_BASE}/${id}/owner-sign`,
+        data
+      )
+      return response.data.data
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error ||
+                          error.response?.data?.message ||
+                          'Failed to save signature'
+      toast.error(errorMessage)
+      throw error
+    }
+  },
+
+  // Regenerate PDF (Admin only)
+  async regeneratePdf(id: string): Promise<Handover> {
+    try {
+      const response = await axios.post<{ success: boolean; data: Handover }>(
+        `${API_BASE}/${id}/regenerate-pdf`
+      )
+      return response.data.data
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.error ||
+                          error.response?.data?.message ||
+                          'Failed to regenerate PDF'
+      toast.error(errorMessage)
+      throw error
+    }
   }
 }
 

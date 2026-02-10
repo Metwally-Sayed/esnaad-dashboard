@@ -288,7 +288,8 @@ export function useHandoverMutations() {
   const ownerConfirm = async (id: string, data?: OwnerConfirmDto) => {
     setIsLoading(true)
     try {
-      const handover = await handoverService.ownerConfirm(id, data)
+      // Use the new acceptHandover endpoint for simplified workflow
+      const handover = await handoverService.acceptHandover(id)
 
       // Revalidate caches
       globalMutate(HANDOVER_KEYS.detail(id))
@@ -298,10 +299,11 @@ export function useHandoverMutations() {
         { revalidate: true }
       )
 
-      toast.success('Handover confirmed successfully')
+      toast.success('Handover accepted successfully')
       return handover
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to confirm handover')
+      const errorMessage = error.response?.data?.error || error.response?.data?.message || 'Failed to accept handover'
+      toast.error(errorMessage)
       throw error
     } finally {
       setIsLoading(false)
@@ -417,6 +419,72 @@ export function useHandoverMutations() {
     }
   }
 
+  // =============== E-Signature Methods ===============
+
+  const updateAdminSignature = async (id: string, signatureUrl: string) => {
+    setIsLoading(true)
+    try {
+      const handover = await handoverService.updateAdminSignature(id, { signatureUrl })
+
+      // Revalidate caches
+      globalMutate(HANDOVER_KEYS.detail(id))
+      globalMutate(
+        key => Array.isArray(key) && key[0] === 'handovers',
+        undefined,
+        { revalidate: true }
+      )
+
+      toast.success('Admin signature saved successfully')
+      return handover
+    } catch (error: any) {
+      // Error toast already shown in service layer
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const updateOwnerSignature = async (id: string, signatureUrl: string) => {
+    setIsLoading(true)
+    try {
+      const handover = await handoverService.updateOwnerSignature(id, { signatureUrl })
+
+      // Revalidate caches
+      globalMutate(HANDOVER_KEYS.detail(id))
+      globalMutate(
+        key => Array.isArray(key) && key[0] === 'handovers',
+        undefined,
+        { revalidate: true }
+      )
+
+      toast.success('Signature saved successfully')
+      return handover
+    } catch (error: any) {
+      // Error toast already shown in service layer
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const regeneratePdf = async (id: string) => {
+    setIsLoading(true)
+    try {
+      const handover = await handoverService.regeneratePdf(id)
+
+      // Revalidate caches
+      globalMutate(HANDOVER_KEYS.detail(id))
+
+      toast.success('PDF regenerated successfully')
+      return handover
+    } catch (error: any) {
+      // Error toast already shown in service layer
+      throw error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   return {
     createHandover,
     updateHandover,
@@ -427,6 +495,9 @@ export function useHandoverMutations() {
     completeHandover,
     cancelHandover,
     addMessage,
+    updateAdminSignature,
+    updateOwnerSignature,
+    regeneratePdf,
     isLoading
   }
 }

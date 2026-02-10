@@ -41,6 +41,7 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedUnitChargeId, setSelectedUnitChargeId] = useState<string | null>(null)
   const [overrideAmount, setOverrideAmount] = useState('')
+  const [overridePaidAmount, setOverridePaidAmount] = useState('')
 
   const { serviceCharge, isLoading: loadingServiceCharge, error: serviceChargeError, mutate: mutateServiceCharge } = useProjectServiceCharge(serviceChargeId)
   const { unitCharges, pagination, isLoading: loadingUnitCharges, error: unitChargesError, mutate: mutateUnitCharges } = useUnitServiceCharges(serviceChargeId, { page, limit: 20 })
@@ -61,23 +62,35 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
     return charge.amount
   }
 
-  const handleOpenOverrideDialog = (unitChargeId: string, currentAmount: number) => {
+  const handleOpenOverrideDialog = (unitChargeId: string, currentAmount: number, currentPaidAmount: number) => {
     setSelectedUnitChargeId(unitChargeId)
     setOverrideAmount(currentAmount.toString())
+    setOverridePaidAmount(currentPaidAmount.toString())
     setOverrideDialogOpen(true)
   }
 
   const handleOverrideSubmit = async () => {
     if (!selectedUnitChargeId) return
 
+    const amount = parseFloat(overrideAmount)
+    const paidAmount = parseFloat(overridePaidAmount) || 0
+
+    // Validate paid amount doesn't exceed amount
+    if (paidAmount > amount) {
+      toast.error('Paid amount cannot exceed total amount')
+      return
+    }
+
     try {
       await overrideUnitServiceCharge(selectedUnitChargeId, {
-        overriddenAmount: parseFloat(overrideAmount),
+        overriddenAmount: amount,
+        paidAmount: paidAmount,
       })
       toast.success('Unit service charge overridden successfully')
       setOverrideDialogOpen(false)
       setSelectedUnitChargeId(null)
       setOverrideAmount('')
+      setOverridePaidAmount('')
       mutateUnitCharges()
     } catch (error: any) {
       toast.error(error?.message || 'Failed to override unit service charge')
@@ -245,7 +258,7 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
       </Card>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-3">
             <CardDescription>Total Units</CardDescription>
@@ -256,11 +269,44 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>PDFs Generated</CardDescription>
+            <CardDescription>Total Amount (AED)</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
-              {unitCharges?.filter((c) => c.pdfUrl).length || 0}
+            <div className="text-2xl font-bold">
+              {(unitCharges?.reduce((sum, c) => sum + parseFloat(getFinalAmount(c).toString()), 0) || 0).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Total Paid (AED)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-600">
+              {(unitCharges?.reduce((sum, c) => sum + parseFloat((c.paidAmount || 0).toString()), 0) || 0).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>Total Balance (AED)</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-600">
+              {(unitCharges?.reduce((sum, c) => {
+                const amount = parseFloat(getFinalAmount(c).toString())
+                const paid = parseFloat((c.paidAmount || 0).toString())
+                return sum + Math.max(0, amount - paid)
+              }, 0) || 0).toLocaleString('en-US', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
             </div>
           </CardContent>
         </Card>
@@ -282,8 +328,10 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
                   <TableRow>
                     <TableHead className="min-w-[120px]">Unit</TableHead>
                     <TableHead className="hidden sm:table-cell min-w-[150px]">Owner</TableHead>
-                    <TableHead className="min-w-[120px]">Amount (AED)</TableHead>
-                    <TableHead className="hidden md:table-cell min-w-[80px]">PDF</TableHead>
+                    <TableHead className="min-w-[100px]">Amount (AED)</TableHead>
+                    <TableHead className="hidden md:table-cell min-w-[100px]">Paid (AED)</TableHead>
+                    <TableHead className="hidden md:table-cell min-w-[100px]">Balance (AED)</TableHead>
+                    <TableHead className="hidden lg:table-cell min-w-[80px]">PDF</TableHead>
                     <TableHead className="text-right min-w-[200px]">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -291,6 +339,8 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
                   {unitCharges && unitCharges.length > 0 ? (
                     unitCharges.map((charge) => {
                       const finalAmount = getFinalAmount(charge)
+                      const paidAmount = charge.paidAmount || 0
+                      const balance = Math.max(0, parseFloat(finalAmount.toString()) - parseFloat(paidAmount.toString()))
                       return (
                         <TableRow key={charge.id}>
                           <TableCell className="font-medium">
@@ -339,6 +389,22 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
                             )}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
+                            <span className="font-medium">
+                              {parseFloat(paidAmount.toString()).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                          </TableCell>
+                          <TableCell className="hidden md:table-cell">
+                            <span className={balance > 0 ? 'font-medium text-amber-600' : 'font-medium text-green-600'}>
+                              {balance.toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}
+                            </span>
+                          </TableCell>
+                          <TableCell className="hidden lg:table-cell">
                             {charge.pdfUrl ? (
                               <Badge variant="outline" className="bg-blue-50 border-blue-300 text-blue-700">
                                 Generated
@@ -352,7 +418,7 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleOpenOverrideDialog(charge.id, getFinalAmount(charge))}
+                                onClick={() => handleOpenOverrideDialog(charge.id, getFinalAmount(charge), charge.paidAmount || 0)}
                               >
                                 <Edit className="h-3 w-3 mr-1" />
                                 Override
@@ -383,7 +449,7 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
                     })
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                         No unit charges found
                       </TableCell>
                     </TableRow>
@@ -447,15 +513,16 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
         open={overrideDialogOpen}
         onOpenChange={setOverrideDialogOpen}
         title="Override Unit Service Charge"
-        description="Enter the new amount for this unit's service charge"
-        submitText="Override Amount"
+        description="Update the amount and payment details for this unit's service charge"
+        submitText="Save Changes"
         onSubmit={handleOverrideSubmit}
         isLoading={isOverriding}
       >
         <div className="space-y-4 py-4">
+          {/* Amount */}
           <div className="space-y-2">
             <Label htmlFor="overrideAmount">
-              New Amount (AED) <span className="text-destructive">*</span>
+              Amount (AED) <span className="text-destructive">*</span>
             </Label>
             <Input
               id="overrideAmount"
@@ -466,8 +533,44 @@ export function ServiceChargeDetailContent({ serviceChargeId }: ServiceChargeDet
               onChange={(e) => setOverrideAmount(e.target.value)}
               placeholder="e.g., 12500.00"
             />
-            <p className="text-sm text-muted-foreground">
-              This will replace the calculated amount for this specific unit
+          </div>
+
+          {/* Paid Amount */}
+          <div className="space-y-2">
+            <Label htmlFor="overridePaidAmount">
+              Paid (AED)
+            </Label>
+            <Input
+              id="overridePaidAmount"
+              type="number"
+              min="0"
+              step="0.01"
+              value={overridePaidAmount}
+              onChange={(e) => setOverridePaidAmount(e.target.value)}
+              placeholder="0.00"
+            />
+          </div>
+
+          {/* Balance (calculated) */}
+          <div className="space-y-2">
+            <Label>Balance (AED)</Label>
+            <div className="h-10 px-3 py-2 rounded-md border bg-muted flex items-center">
+              {(() => {
+                const amount = parseFloat(overrideAmount) || 0
+                const paid = parseFloat(overridePaidAmount) || 0
+                const balance = Math.max(0, amount - paid)
+                return (
+                  <span className={balance > 0 ? 'text-amber-600 font-medium' : 'text-green-600 font-medium'}>
+                    {balance.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </span>
+                )
+              })()}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              {(parseFloat(overrideAmount) || 0) - (parseFloat(overridePaidAmount) || 0) <= 0 ? 'Fully paid' : 'Remaining balance'}
             </p>
           </div>
         </div>

@@ -288,7 +288,7 @@ export function UserDetail({
                       <TableHead>Type</TableHead>
                       <TableHead>Area</TableHead>
                       <TableHead>Floor</TableHead>
-                      <TableHead className="text-right">Price (SAR)</TableHead>
+                      <TableHead className="text-right">Price (AED)</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -371,7 +371,7 @@ export function UserDetail({
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">Total Value</p>
-                      <p className="text-2xl font-semibold">{formatCurrency(totalValue)} SAR</p>
+                      <p className="text-2xl font-semibold">{formatCurrency(totalValue)} AED</p>
                     </div>
                   </div>
                 </div>

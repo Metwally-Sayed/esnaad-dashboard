@@ -135,6 +135,12 @@ export interface Handover {
   sentAt?: string
   ownerAcceptedAt?: string
 
+  // E-Signature fields
+  adminSignatureUrl?: string
+  ownerSignatureUrl?: string
+  adminSignedAt?: string
+  ownerSignedAt?: string
+
   // Counts
   _count?: {
     messages: number

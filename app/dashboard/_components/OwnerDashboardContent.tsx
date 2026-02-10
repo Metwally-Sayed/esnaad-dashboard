@@ -141,7 +141,7 @@ export function OwnerDashboardContent() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalValue} SAR</div>
+            <div className="text-2xl font-bold">{stats.totalValue} AED</div>
             <p className="text-xs text-muted-foreground mt-1">
               Portfolio value
             </p>
@@ -159,7 +159,7 @@ export function OwnerDashboardContent() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.averageValue} SAR</div>
+            <div className="text-2xl font-bold">{stats.averageValue} AED</div>
             <p className="text-xs text-muted-foreground mt-1">
               Per unit
             </p>

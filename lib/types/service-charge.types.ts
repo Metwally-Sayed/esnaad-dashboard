@@ -55,6 +55,7 @@ export interface UnitServiceCharge {
   unitId: string
   projectServiceChargeId: string
   amount: number
+  paidAmount: number
   isOverridden: boolean
   overriddenAmount: number | null
   overriddenById: string | null
@@ -113,6 +114,17 @@ export interface CreateProjectServiceChargeDto {
   dueDate?: string
 }
 
+// Simple single-unit service charge creation
+export interface CreateSimpleServiceChargeDto {
+  unitId: string
+  year: number
+  quarter?: number
+  periodType: ServiceChargePeriodType
+  amount: number
+  paidAmount?: number
+  dueDate?: string
+}
+
 export interface UpdateProjectServiceChargeDto {
   percentage?: number
   dueDate?: string
@@ -120,6 +132,7 @@ export interface UpdateProjectServiceChargeDto {
 
 export interface OverrideUnitServiceChargeDto {
   overriddenAmount: number
+  paidAmount?: number
 }
 
 // Unit for service charge selection

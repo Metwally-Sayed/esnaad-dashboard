@@ -7,10 +7,14 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { AlertCircle, FileText, Calendar, Download, Loader2, Plus, Eye, MapPin, AlertTriangle, CheckCircle, MessageSquare } from 'lucide-react'
+import { Separator } from '@/components/ui/separator'
+import { AlertCircle, FileText, Calendar, Download, Loader2, Plus, Eye, MapPin, AlertTriangle, CheckCircle, MessageSquare, Pen, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { useUnitSnaggings, useAcceptSnagging } from '@/lib/hooks/use-snagging'
+import { useUnitSnaggings, useAcceptSnagging, useSnagging } from '@/lib/hooks/use-snagging'
+import { SignatureCaptureDialog } from '@/components/signature/SignatureCaptureDialog'
+import snaggingService from '@/lib/api/snagging.service'
 import { Snagging } from '@/lib/types/snagging.types'
+import { toast } from 'sonner'
 
 /**
  * Component props
@@ -66,13 +70,41 @@ export function UnitSnaggingWidget({
   onCreateSnagging
 }: UnitSnaggingWidgetProps) {
   const [selectedSnagging, setSelectedSnagging] = useState<Snagging | null>(null)
+  const [signatureDialogOpen, setSignatureDialogOpen] = useState(false)
 
   // Fetch snaggings for this unit
   const { data, isLoading, error, mutate } = useUnitSnaggings(unitId)
   const snaggings = data?.data || []
 
+  // Fetch full snagging details (with signature fields) when one is selected
+  const { data: fullSnaggingData, mutate: mutateSnagging } = useSnagging(selectedSnagging?.id || '')
+  const fullSnagging = selectedSnagging?.id ? (fullSnaggingData || selectedSnagging) : null
+
   // Accept snagging hook - always initialize with stable ID
   const acceptSnagging = useAcceptSnagging(selectedSnagging?.id || '')
+
+  // Check signature status
+  const hasAdminSignature = !!fullSnagging?.adminSignatureUrl
+  const hasOwnerSignature = !!fullSnagging?.ownerSignatureUrl
+  const bothSignaturesPresent = hasAdminSignature && hasOwnerSignature
+
+  /**
+   * Handle owner signature
+   */
+  const handleOwnerSignature = async (signatureUrl: string) => {
+    if (!selectedSnagging?.id) return
+
+    try {
+      await snaggingService.updateOwnerSignature(selectedSnagging.id, { signatureUrl })
+      // Refresh data to get updated signature
+      await mutateSnagging()
+      await mutate()
+    } catch (error: any) {
+      console.error('Failed to save signature:', error)
+      // Error toast is shown by the service
+      throw error // Re-throw so the dialog knows it failed
+    }
+  }
 
   /**
    * Accept snagging and generate PDF
@@ -84,6 +116,7 @@ export function UnitSnaggingWidget({
       const result = await acceptSnagging.mutateAsync()
       // Refresh the list to get updated data with PDF URL
       await mutate()
+      await mutateSnagging()
       // Update the selected snagging with the new data including PDF URL
       if (result) {
         setSelectedSnagging(result)
@@ -389,25 +422,115 @@ export function UnitSnaggingWidget({
 
             {/* Footer Actions */}
             <div className="pt-4 border-t space-y-3">
-              {/* Accept Button - Only when SENT_TO_OWNER */}
+              {/* Signatures Section - Only when SENT_TO_OWNER */}
               {selectedSnagging.status === 'SENT_TO_OWNER' && userRole === 'OWNER' && (
-                <Button
-                  className="w-full"
-                  onClick={handleAcceptSnagging}
-                  disabled={acceptSnagging.isPending || !selectedSnagging.id}
-                >
-                  {acceptSnagging.isPending ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Accepting & Generating PDF...
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Accept Snagging
-                    </>
+                <>
+                  {/* Signature Status */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Pen className="h-4 w-4" />
+                      Signatures Required
+                    </div>
+
+                    {/* Admin Signature Status */}
+                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                      <span className="text-sm">Admin Signature</span>
+                      {hasAdminSignature ? (
+                        <Badge variant="outline" className="bg-green-50 text-green-700">
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Signed
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-muted-foreground">
+                          <Clock className="h-3 w-3 mr-1" />
+                          Pending
+                        </Badge>
+                      )}
+                    </div>
+
+                    {/* Owner Signature Status & Action */}
+                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                      <span className="text-sm">Your Signature</span>
+                      {hasOwnerSignature ? (
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="bg-green-50 text-green-700">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Signed
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setSignatureDialogOpen(true)}
+                          >
+                            Update
+                          </Button>
+                        </div>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSignatureDialogOpen(true)}
+                        >
+                          <Pen className="h-3 w-3 mr-1" />
+                          Add Signature
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Signature preview */}
+                    {fullSnagging?.ownerSignatureUrl && (
+                      <div className="p-2 bg-muted/30 rounded-lg border">
+                        <img
+                          src={fullSnagging.ownerSignatureUrl}
+                          alt="Your signature"
+                          className="max-h-10 mx-auto"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Acceptance Alert */}
+                  {!bothSignaturesPresent && (
+                    <Alert>
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="text-sm">
+                        {!hasOwnerSignature
+                          ? 'Please add your signature before accepting.'
+                          : 'Waiting for admin signature.'}
+                      </AlertDescription>
+                    </Alert>
                   )}
-                </Button>
+
+                  {bothSignaturesPresent && (
+                    <Alert className="bg-green-50 border-green-200">
+                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <AlertDescription className="text-sm text-green-800">
+                        Both signatures complete. You can now accept.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  {/* Accept Button */}
+                  <Button
+                    className="w-full"
+                    onClick={handleAcceptSnagging}
+                    disabled={acceptSnagging.isPending || !selectedSnagging.id || !bothSignaturesPresent}
+                  >
+                    {acceptSnagging.isPending ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Accepting & Generating PDF...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-2" />
+                        Accept Snagging
+                      </>
+                    )}
+                  </Button>
+                </>
               )}
 
               {/* Download PDF - Only when accepted and PDF is available */}
@@ -477,6 +600,16 @@ export function UnitSnaggingWidget({
           </DialogContent>
         </Dialog>
       )}
+
+      {/* Owner Signature Dialog */}
+      <SignatureCaptureDialog
+        open={signatureDialogOpen}
+        onOpenChange={setSignatureDialogOpen}
+        title="Your Signature"
+        description="Draw your signature or upload an image. This will be included in the snagging report PDF."
+        currentSignatureUrl={fullSnagging?.ownerSignatureUrl}
+        onSignatureCapture={handleOwnerSignature}
+      />
     </Card>
   )
 }

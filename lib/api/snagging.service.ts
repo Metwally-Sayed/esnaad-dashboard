@@ -8,7 +8,7 @@ import { ApiResponse } from '@/lib/types/auth.types'
 import {
   Snagging,
   CreateSnaggingDto,
-  UpdateOwnerSignatureDto,
+  UpdateSignatureDto,
   SnaggingFilters,
   SnaggingListResponse,
   SnaggingStats
@@ -84,11 +84,22 @@ class SnaggingService {
   }
 
   /**
-   * Update owner signature
+   * Update admin signature (admin only - DRAFT or SENT_TO_OWNER)
    */
-  async updateOwnerSignature(id: string, data: UpdateOwnerSignatureDto): Promise<Snagging> {
-    const response = await api.patch<ApiResponse<Snagging>>(
-      `/snaggings/${id}/owner-signature`,
+  async updateAdminSignature(id: string, data: { signatureUrl: string }): Promise<Snagging> {
+    const response = await api.post<ApiResponse<Snagging>>(
+      `/snaggings/${id}/sign`,
+      data
+    )
+    return response.data.data!
+  }
+
+  /**
+   * Update owner signature (owner only - SENT_TO_OWNER)
+   */
+  async updateOwnerSignature(id: string, data: { signatureUrl: string }): Promise<Snagging> {
+    const response = await api.post<ApiResponse<Snagging>>(
+      `/snaggings/${id}/owner-sign`,
       data
     )
     return response.data.data!

@@ -6,6 +6,7 @@ import {
   UnitServiceChargeResponse,
   DownloadUrlResponse,
   CreateProjectServiceChargeDto,
+  CreateSimpleServiceChargeDto,
   UpdateProjectServiceChargeDto,
   OverrideUnitServiceChargeDto,
   ProjectServiceChargeFilters,
@@ -51,12 +52,22 @@ class ServiceChargeService {
   }
 
   /**
-   * Create project service charge (Admin only)
+   * Create project service charge (Admin only) - Legacy multi-unit
    */
   async createProjectServiceCharge(
     data: CreateProjectServiceChargeDto
   ): Promise<ProjectServiceChargeResponse> {
     const response = await api.post('/admin/service-charges', data)
+    return response.data
+  }
+
+  /**
+   * Create simple service charge for single unit (Admin only)
+   */
+  async createSimpleServiceCharge(
+    data: CreateSimpleServiceChargeDto
+  ): Promise<UnitServiceChargeResponse> {
+    const response = await api.post('/admin/service-charges/simple', data)
     return response.data
   }
 
