@@ -259,6 +259,19 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
             {/* Status Badge - Larger and more prominent */}
             <div className="flex flex-col items-end gap-2">
               <HandoverStatusBadge status={handover.status} className="text-sm px-3 py-1.5" />
+              {handover.pdfUrl ? (
+                <Badge
+                  variant="outline"
+                  className="text-xs px-2 py-1 text-green-700 border-green-300 bg-green-50"
+                >
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  PDF Ready
+                </Badge>
+              ) : (
+                <Badge variant="secondary" className="text-xs px-2 py-1">
+                  PDF Pending
+                </Badge>
+              )}
               {handover.handoverAt && (
                 <p className="text-xs text-muted-foreground">
                   Completed {format(new Date(handover.handoverAt), 'PPp')}
@@ -513,7 +526,7 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
           )}
 
           {/* Generated PDF Document */}
-          {handover.status === HandoverStatus.ACCEPTED && handover.pdfUrl && (
+          {handover.pdfUrl && (
             <Card>
               <CardHeader className="bg-green-50 dark:bg-green-950/20 pb-4">
                 <div className="flex items-center gap-3">
@@ -523,7 +536,7 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
                   <div>
                     <CardTitle className="text-base">Handover Agreement (PDF)</CardTitle>
                     <CardDescription className="text-xs mt-0.5">
-                      Generated on {handover.ownerAcceptedAt ? format(new Date(handover.ownerAcceptedAt), 'PPP') : 'Acceptance'}
+                      PDF generated and available for download
                     </CardDescription>
                   </div>
                 </div>
@@ -545,7 +558,7 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
                     </div>
                     <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950/20 dark:text-green-400">
                       <CheckCircle className="h-3 w-3 mr-1" />
-                      Accepted
+                      Ready
                     </Badge>
                   </div>
 
@@ -737,15 +750,31 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
                 </>
               )}
 
-              {isAccepted && handover.pdfUrl && (
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => window.open(handover.pdfUrl, '_blank')}
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF Agreement
-                </Button>
+              {/* View/Download PDF */}
+              {handover.pdfUrl && (
+                <>
+                  <Button
+                    variant="default"
+                    className="w-full"
+                    onClick={() => window.open(handover.pdfUrl, '_blank')}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    View PDF
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      const link = document.createElement('a')
+                      link.href = handover.pdfUrl!
+                      link.download = `handover-${handover.unit?.unitNumber || handover.id}.pdf`
+                      link.click()
+                    }}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
@@ -894,8 +923,8 @@ export function HandoverDetail({ handoverId }: HandoverDetailProps) {
                 )}
               </div>
 
-              {/* Regenerate PDF button for admin when both signatures are present */}
-              {isAdmin && bothSignaturesPresent && handover.status === HandoverStatus.SENT_TO_OWNER && (
+              {/* Regenerate PDF button for admin */}
+              {isAdmin && !isCancelled && (
                 <>
                   <Separator />
                   <Button
