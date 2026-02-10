@@ -1,13 +1,13 @@
 'use client'
 
-import { UserDetail } from "./UserDetail"
+import { fetchUserById, updateUser } from "@/lib/api/users.service"
+import { useUserAuditLogs } from "@/lib/hooks/use-audit-logs"
+import { useUnits } from "@/lib/hooks/use-units"
+import { UnitDetails, UserDetails } from "@/lib/types/api.types"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { fetchUserById, updateUser } from "@/lib/api/users.service"
-import { UserDetails, UnitDetails } from "@/lib/types/api.types"
 import { toast } from "sonner"
-import { useUnits } from "@/lib/hooks/use-units"
-import { useUserAuditLogs } from "@/lib/hooks/use-audit-logs"
+import { UserDetail } from "./UserDetail"
 
 interface UserDetailWrapperProps {
   userId: string
@@ -44,6 +44,8 @@ export function UserDetailWrapper({ userId }: UserDetailWrapperProps) {
         setIsLoading(true)
         const userData = await fetchUserById(userId)
         setUser(userData)
+        console.log(userData, "userData");
+
       } catch (error: any) {
         console.error('Failed to fetch user:', error)
         toast.error('Failed to load user details')

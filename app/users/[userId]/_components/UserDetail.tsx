@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ChevronLeft, Edit, UserCheck, UserX, Mail, Phone, IdCard, MapPin, Calendar, Building2, Home, Loader2 } from 'lucide-react';
+import { ChevronLeft, Edit, UserCheck, UserX, Mail, Phone, IdCard, MapPin, Calendar, Building2, Home, Loader2, FileText, ShieldCheck, ShieldX, ShieldAlert, ExternalLink, Download } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
@@ -162,6 +162,25 @@ export function UserDetail({
             <Badge variant="secondary">
               {getUserRole()}
             </Badge>
+            {user.verificationStatus && (
+              <Badge
+                variant="outline"
+                className={
+                  user.verificationStatus === 'APPROVED'
+                    ? 'bg-green-50 text-green-700 border-green-200'
+                    : user.verificationStatus === 'REJECTED'
+                    ? 'bg-red-50 text-red-700 border-red-200'
+                    : user.verificationStatus === 'PENDING_APPROVAL'
+                    ? 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                    : 'bg-gray-50 text-gray-700 border-gray-200'
+                }
+              >
+                {user.verificationStatus === 'APPROVED' && <ShieldCheck className="h-3 w-3 mr-1" />}
+                {user.verificationStatus === 'REJECTED' && <ShieldX className="h-3 w-3 mr-1" />}
+                {user.verificationStatus === 'PENDING_APPROVAL' && <ShieldAlert className="h-3 w-3 mr-1" />}
+                {user.verificationStatus === 'APPROVED' ? 'Verified' : user.verificationStatus === 'REJECTED' ? 'Rejected' : user.verificationStatus === 'PENDING_APPROVAL' ? 'Pending Approval' : 'Pending Documents'}
+              </Badge>
+            )}
           </div>
           <p className="text-muted-foreground">
             Registered on {formatDate(user.createdAt)} • {totalUnits} {totalUnits === 1 ? 'unit' : 'units'} owned
@@ -334,6 +353,100 @@ export function UserDetail({
             </CardContent>
           </Card>
 
+          {/* Verification Documents */}
+          {user.ownerDocuments && user.ownerDocuments.length > 0 && (
+            <Card className="border-primary/20">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Verification Documents
+                  </CardTitle>
+                  <Badge variant="secondary">
+                    {user.ownerDocuments.length} {user.ownerDocuments.length === 1 ? 'Document' : 'Documents'}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {user.ownerDocuments.map((doc) => (
+                    <div key={doc.id} className="border rounded-lg overflow-hidden">
+                      {/* Document Preview */}
+                      {doc.mimeType.startsWith('image/') ? (
+                        <div className="relative h-48 bg-muted">
+                          <img
+                            src={doc.fileKey}
+                            alt={doc.type === 'PASSPORT' ? 'Passport' : 'National ID'}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-48 bg-muted flex items-center justify-center">
+                          <FileText className="h-16 w-16 text-muted-foreground" />
+                        </div>
+                      )}
+                      {/* Document Info */}
+                      <div className="p-4 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-sm">
+                              {doc.type === 'PASSPORT' ? 'Passport' : 'National ID'}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Uploaded {formatDate(doc.createdAt)} • {(doc.sizeBytes / 1024).toFixed(0)} KB
+                            </p>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={
+                              doc.status === 'APPROVED'
+                                ? 'bg-green-50 text-green-700 border-green-200'
+                                : doc.status === 'REJECTED'
+                                ? 'bg-red-50 text-red-700 border-red-200'
+                                : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                            }
+                          >
+                            {doc.status}
+                          </Badge>
+                        </div>
+                        {doc.status === 'REJECTED' && doc.rejectionReason && (
+                          <p className="text-xs text-red-600 bg-red-50 p-2 rounded">
+                            Reason: {doc.rejectionReason}
+                          </p>
+                        )}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => window.open(doc.fileKey, '_blank')}
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => {
+                              const link = document.createElement('a')
+                              link.href = doc.fileKey
+                              link.download = `${doc.type.toLowerCase()}-${user.name || user.id}.${doc.mimeType.split('/')[1] || 'pdf'}`
+                              link.click()
+                            }}
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Download
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Audit Logs Section */}
           <AuditLogsTable
             auditLogs={auditLogs}
@@ -409,6 +522,28 @@ export function UserDetail({
                 <div>
                   <Label className="text-muted-foreground text-sm">User Role</Label>
                   <p className="mt-1 font-medium">{getUserRole()}</p>
+                </div>
+                <Separator />
+                <div>
+                  <Label className="text-muted-foreground text-sm">Verification</Label>
+                  <div className="mt-2">
+                    <Badge
+                      className={
+                        user.verificationStatus === 'APPROVED'
+                          ? 'bg-green-100 text-green-800 border-green-200'
+                          : user.verificationStatus === 'REJECTED'
+                          ? 'bg-red-100 text-red-800 border-red-200'
+                          : user.verificationStatus === 'PENDING_APPROVAL'
+                          ? 'bg-yellow-100 text-yellow-800 border-yellow-200'
+                          : 'bg-gray-100 text-gray-800 border-gray-200'
+                      }
+                    >
+                      {user.verificationStatus === 'APPROVED' ? 'Verified' : user.verificationStatus === 'REJECTED' ? 'Rejected' : user.verificationStatus === 'PENDING_APPROVAL' ? 'Pending Review' : 'Pending Documents'}
+                    </Badge>
+                  </div>
+                  {user.verificationNote && (
+                    <p className="text-xs text-muted-foreground mt-1">{user.verificationNote}</p>
+                  )}
                 </div>
                 <Separator />
                 <div>

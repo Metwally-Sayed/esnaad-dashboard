@@ -1,5 +1,8 @@
 'use client'
 
+import { UsersFilters } from '@/components/UsersFilters'
+import { UsersTable } from '@/components/UsersTable'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/contexts/AuthContext'
 import { useUserMutations, useUsers } from '@/lib/hooks/use-users'
 import { UserFilters } from '@/lib/types/api.types'
@@ -7,9 +10,6 @@ import { ChevronLeft, ChevronRight, Users } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { toast } from 'sonner'
-import { UsersFilters } from '@/components/UsersFilters'
-import { UsersTable } from '@/components/UsersTable'
-import { Button } from '@/components/ui/button'
 
 export function UsersContent() {
   const router = useRouter()
@@ -22,6 +22,8 @@ export function UsersContent() {
   })
 
   const { users = [], meta: pagination, isLoading, mutate } = useUsers(filters)
+  console.log(users, "users");
+
   const { deleteUser, isDeleting } = useUserMutations()
 
   const handleAddUser = () => {

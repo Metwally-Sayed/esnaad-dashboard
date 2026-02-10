@@ -152,9 +152,12 @@ export interface UserDetails {
   emailVerified: boolean
   isEmailVerified?: boolean // Alias for emailVerified
   isActive: boolean
+  verificationStatus?: string
+  verificationNote?: string | null
   createdAt: string
   updatedAt: string
   unitsCount?: number
+  ownerDocuments?: UserOwnerDocument[]
   externalClient?: {
     nationalityId?: string
     phoneNumber?: string
@@ -167,6 +170,18 @@ export interface UserDetails {
   _count?: {
     ownedUnits: number
   }
+}
+
+export interface UserOwnerDocument {
+  id: string
+  type: 'PASSPORT' | 'NATIONAL_ID'
+  fileKey: string
+  mimeType: string
+  sizeBytes: number
+  status: 'PENDING' | 'APPROVED' | 'REJECTED'
+  rejectionReason?: string | null
+  reviewedAt?: string | null
+  createdAt: string
 }
 
 export interface UpdateUserDto {
