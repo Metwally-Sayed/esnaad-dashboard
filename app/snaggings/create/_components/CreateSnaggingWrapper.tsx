@@ -9,7 +9,7 @@ export function CreateSnaggingWrapper() {
   return (
     <Suspense
       fallback={
-        <div className="max-w-[900px] mx-auto p-4 md:p-6 lg:p-8">
+        <div className="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
           <Card>
             <CardHeader>
               <Skeleton className="h-8 w-64" />

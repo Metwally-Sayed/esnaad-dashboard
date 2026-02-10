@@ -35,9 +35,10 @@ interface SnaggingFormProps {
   onSubmit: (data: CreateSnaggingDto) => Promise<void>
   onCancel?: () => void
   isLoading?: boolean
+  preselectedUnitId?: string | null
 }
 
-export function SnaggingForm({ onSubmit, onCancel, isLoading = false }: SnaggingFormProps) {
+export function SnaggingForm({ onSubmit, onCancel, isLoading = false, preselectedUnitId }: SnaggingFormProps) {
   const [images, setImages] = useState<ImageWithComment[]>([])
   const [selectedUnitId, setSelectedUnitId] = useState<string>('')
   const [selectedOwnerId, setSelectedOwnerId] = useState<string>('')
@@ -69,6 +70,17 @@ export function SnaggingForm({ onSubmit, onCancel, isLoading = false }: Snagging
       images: []
     }
   })
+
+  // Apply preselected unit once units are loaded
+  useEffect(() => {
+    if (preselectedUnitId && units.length > 0 && !selectedUnitId) {
+      const unitExists = units.find(u => u.id === preselectedUnitId)
+      if (unitExists) {
+        setSelectedUnitId(preselectedUnitId)
+        setValue('unitId', preselectedUnitId, { shouldValidate: true })
+      }
+    }
+  }, [preselectedUnitId, units, selectedUnitId, setValue])
 
   // Update form when images change
   useEffect(() => {

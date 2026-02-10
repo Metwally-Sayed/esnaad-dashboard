@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { SnaggingForm } from '@/components/snagging/SnaggingForm'
 import { CreateSnaggingDto } from '@/lib/types/snagging.types'
 import snaggingService from '@/lib/api/snagging.service'
 import { toast } from 'sonner'
 import { useAuth } from '@/contexts/AuthContext'
-import { ArrowLeft, AlertTriangle } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 
 export function CreateSnaggingContent() {
   const router = useRouter()
@@ -56,31 +55,24 @@ export function CreateSnaggingContent() {
   }
 
   return (
-    <div className="max-w-[900px] mx-auto p-4 md:p-6 lg:p-8">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="sm" onClick={() => router.back()}>
+    <div className="max-w-[1440px] mx-auto p-4 md:p-6 lg:p-8">
+      {/* Page Header */}
+      <div className="mb-6">
+        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
           <ArrowLeft className="h-4 w-4 mr-2" />
-          Back
+          Back to Snaggings
         </Button>
+        <h1 className="text-2xl md:text-3xl font-bold">Create Snagging Report</h1>
+        <p className="text-muted-foreground mt-1">
+          Create a new snagging inspection report with images and comments. The PDF will be automatically generated after creation.
+        </p>
       </div>
-
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-6 w-6" />
-            Create Snagging Report
-          </CardTitle>
-          <CardDescription>
-            Create a new snagging inspection report with images and comments. The PDF will be automatically generated after creation.
-          </CardDescription>
-        </CardHeader>
-      </Card>
 
       <SnaggingForm
         onSubmit={handleSubmit}
         onCancel={handleCancel}
         isLoading={isSubmitting}
+        preselectedUnitId={preselectedUnitId}
       />
     </div>
   )
